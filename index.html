@@ -534,10 +534,12 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;pointe
   <div class="social-bar">
     <div class="social-tag">join the movement</div>
     <div class="social-links">
-      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1d54f;</span> @GlitchNetwork</a>
-      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4dd;</span> Threads</a>
-      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4ac;</span> Discord</a>
-      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4f1;</span> Telegram</a>
+      <a href="https://x.com/GlitchNetwork" class="social-link" target="_blank"><span class="social-link-icon">&#x1d54f;</span> @GlitchNetwork</a>
+      <a href="https://instagram.com/GlitchNetwork" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4f7;</span> Instagram</a>
+      <a href="https://threads.net/@GlitchNetwork" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4dd;</span> Threads</a>
+      <a href="https://tiktok.com/@GlitchNetwork" class="social-link" target="_blank"><span class="social-link-icon">&#x1f3b5;</span> TikTok</a>
+      <a href="https://discord.gg/glitchnetwork" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4ac;</span> Discord</a>
+      <a href="https://t.me/GlitchNetwork" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4f1;</span> Telegram</a>
     </div>
   </div>
 </section>
@@ -631,6 +633,22 @@ function startStripeCheckout(plan){
   localStorage.setItem('glitch_pending_plan',plan);
   const tierMap={monthly:'guide',quarterly:'builder',yearly:'inner_circle'};
   localStorage.setItem('glitch_tier',tierMap[plan]||'guide');
+  window.location.href=link;
+}
+
+// Crypto payment via NOWPayments — placeholder links until account is set up
+const CRYPTO_LINKS={
+  monthly:'NOWPAY_MONTHLY_LINK',
+  quarterly:'NOWPAY_QUARTERLY_LINK',
+  yearly:'NOWPAY_YEARLY_LINK',
+};
+function openCryptoPayment(){
+  const plan=window._pwSelectedPlan||'yearly';
+  const link=CRYPTO_LINKS[plan];
+  if(!link||link.startsWith('NOWPAY_')){
+    alert('Crypto payments coming soon! Use card checkout above for now.');
+    return;
+  }
   window.location.href=link;
 }
 
@@ -1852,6 +1870,18 @@ function renderPaywall(type,steps){
         </stripe-pricing-table>
       </div>
       <div style="text-align:center;margin-top:0.5rem;font-size:0.6rem;color:var(--text-dim)">\u{1F6E1} 30-day money-back guarantee &bull; cancel anytime &bull; instant access</div>
+
+      <!-- Crypto Payment Option -->
+      <div style="display:flex;align-items:center;gap:0.8rem;margin:1.2rem 0 0.8rem">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="color:var(--text-dim);font-size:0.6rem;text-transform:uppercase;letter-spacing:2px">or pay with crypto</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <button onclick="openCryptoPayment()" style="width:100%;padding:0.8rem;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:0.8rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:0.6rem">
+        <span style="font-size:1.2rem">\u{20BF}</span>
+        <span>Pay with Crypto — <strong>200+ coins accepted</strong></span>
+      </button>
+      <div style="text-align:center;margin-top:0.4rem;font-size:0.55rem;color:var(--text-dim)">BTC \u2022 ETH \u2022 SOL \u2022 USDT \u2022 USDC \u2022 and 200+ more via NOWPayments</div>
 
     </div>
   `;
