@@ -1862,25 +1862,12 @@ function renderPaywall(type,steps){
         </div>
       </div>
 
-      <!-- Stripe Pricing Table -->
-      <div style="margin-top:1.2rem;border-radius:14px;overflow:hidden">
-        <stripe-pricing-table pricing-table-id="prctbl_1TFj49D1W7kK4TdpmawzUowa"
-          publishable-key="pk_live_51TFiEdD1W7kK4TdpInRGe4WPEwrzG1cgnLDJjcZFGw4nuSPF68ojwMSacs06eqj8tdl7nutrbMbJaPPcn7bn9uUG00Fe5A7cGO">
-        </stripe-pricing-table>
-      </div>
-      <div style="text-align:center;margin-top:0.5rem;font-size:0.6rem;color:var(--text-dim)">\u{1F6E1} 30-day money-back guarantee &bull; cancel anytime &bull; instant access</div>
-
-      <!-- Crypto Payment Option -->
-      <div style="display:flex;align-items:center;gap:0.8rem;margin:1.2rem 0 0.8rem">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="color:var(--text-dim);font-size:0.6rem;text-transform:uppercase;letter-spacing:2px">or pay with crypto</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>
-      <button onclick="openCryptoPayment()" style="width:100%;padding:0.8rem;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-size:0.8rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:0.6rem">
-        <span style="font-size:1.2rem">\u{20BF}</span>
-        <span>Pay with Crypto — <strong>200+ coins accepted</strong></span>
+      <!-- Deploy button -->
+      <button class="pw-deploy-btn" onclick="startStripeCheckout('${selectedPlan}')">
+        Deploy Your Agents \u2014 ${selectedPlan==='yearly'?'$197/year':selectedPlan==='quarterly'?'$97/quarter':'$67/month'}
       </button>
-      <div style="text-align:center;margin-top:0.4rem;font-size:0.55rem;color:var(--text-dim)">BTC \u2022 ETH \u2022 SOL \u2022 USDT \u2022 USDC \u2022 and 200+ more via NOWPayments</div>
+      <div style="text-align:center;margin-top:0.5rem;font-size:0.6rem;color:var(--text-dim)">\u{1F6E1} 30-day money-back guarantee &bull; cancel anytime &bull; instant access</div>
+      <div style="text-align:center;margin-top:0.3rem;font-size:0.55rem;color:var(--text-dim)">\u{1F4B3} Apple Pay \u2022 Google Pay \u2022 All cards accepted</div>
 
     </div>
   `;
