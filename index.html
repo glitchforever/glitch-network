@@ -612,25 +612,25 @@ const STRIPE_PRICES={
   yearly:'price_1TFiYSD1W7kK4TdpWtlYoIvs',     // $197/year
 };
 
+// Stripe Payment Links — paste your links here
+const STRIPE_LINKS={
+  monthly:'https://buy.stripe.com/14A00idPw11V8ei3hH1Nu02',
+  quarterly:'https://buy.stripe.com/14A00i5j09yrbqu4lL1Nu01',
+  yearly:'https://buy.stripe.com/00w7sK26O5ibcuy5pP1Nu00',
+};
+
 function startStripeCheckout(plan){
-  const priceId=STRIPE_PRICES[plan];
-  if(!priceId||priceId.startsWith('PRICE_ID_')){
-    // Fallback: show "coming soon" if price IDs not set yet
+  const link=STRIPE_LINKS[plan];
+  if(!link||link.startsWith('PASTE_')){
     const btn=document.querySelector('.pw-deploy-btn');
     if(btn){btn.textContent='⚡ Setting up payments — check back soon';btn.style.opacity='0.6';}
     setTimeout(()=>{if(btn){btn.textContent='Deploy Your Agents';btn.style.opacity='1';}},3000);
     return;
   }
-  const email=localStorage.getItem('glitch_email')||'';
-  stripe.redirectToCheckout({
-    lineItems:[{price:priceId,quantity:1}],
-    mode:'subscription',
-    successUrl:window.location.origin+window.location.pathname+'?checkout=success&plan='+plan,
-    cancelUrl:window.location.origin+window.location.pathname+'?checkout=cancel',
-    customerEmail:email||undefined,
-  }).then(function(result){
-    if(result.error){console.error(result.error.message);}
-  });
+  localStorage.setItem('glitch_pending_plan',plan);
+  const tierMap={monthly:'guide',quarterly:'builder',yearly:'inner_circle'};
+  localStorage.setItem('glitch_tier',tierMap[plan]||'guide');
+  window.location.href=link;
 }
 
 // Handle return from Stripe checkout
