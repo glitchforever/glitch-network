@@ -7,6 +7,7 @@
 <meta name="description" content="Take the quiz. Discover your Glitch archetype. Build an AI system tailored to your life, your goals, and your edge.">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://js.stripe.com/v3/"></script>
+<script async src="https://js.stripe.com/v3/pricing-table.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1837,10 +1838,12 @@ function renderPaywall(type,steps){
         </div>
       </div>
 
-      <!-- Deploy button -->
-      <button class="pw-deploy-btn" onclick="startStripeCheckout('${selectedPlan}')">
-        Deploy Your Agents \u2014 ${selectedPlan==='yearly'?'$197/year':selectedPlan==='quarterly'?'$97/quarter':'$67/month'}
-      </button>
+      <!-- Stripe Pricing Table -->
+      <div style="margin-top:1.2rem;border-radius:14px;overflow:hidden">
+        <stripe-pricing-table pricing-table-id="prctbl_1TFj49D1W7kK4TdpmawzUowa"
+          publishable-key="pk_live_51TFiEdD1W7kK4TdpInRGe4WPEwrzG1cgnLDJjcZFGw4nuSPF68ojwMSacs06eqj8tdl7nutrbMbJaPPcn7bn9uUG00Fe5A7cGO">
+        </stripe-pricing-table>
+      </div>
       <div style="text-align:center;margin-top:0.5rem;font-size:0.6rem;color:var(--text-dim)">\u{1F6E1} 30-day money-back guarantee &bull; cancel anytime &bull; instant access</div>
 
     </div>
