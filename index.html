@@ -1003,9 +1003,12 @@ function handleGate(method){
   if(!email||!email.includes('@')){document.getElementById('userEmail').style.borderColor='var(--red)';return}
   userData.email=email;userData.name=name;userData.payMethod=method||'free';
   localStorage.setItem('glitch_user',JSON.stringify(userData));
+  localStorage.setItem('glitch_email',email);
+
+  // Capture lead in background
+  fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,answers:{}})}).catch(()=>{});
 
   // Quiz is FREE — go straight to questions
-  // Payment happens at the guide unlock ($5) or subscription tiers
   showScreen('screenQuiz');
   initQuiz();
 }
@@ -1327,6 +1330,10 @@ function doReveal(){
   userData.archetype=type;
   localStorage.setItem('glitch_user',JSON.stringify(userData));
   localStorage.setItem('glitch_unlocked','true');
+
+  // Update lead with archetype
+  const email=localStorage.getItem('glitch_email')||'';
+  if(email){fetch('/api/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,archetype:type,answers})}).catch(()=>{});}
 
   const a=archetypes[type];
   setTimeout(()=>{
