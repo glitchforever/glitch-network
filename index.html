@@ -1,0 +1,2221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's Your Glitch? — Discover Your AI-Powered Edge</title>
+<meta name="description" content="Take the quiz. Discover your Glitch archetype. Build an AI system tailored to your life, your goals, and your edge.">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#06060b;--bg2:#0d0d14;--bg3:#14142a;
+--cyan:#00d4ff;--green:#00e676;--red:#ff3050;--purple:#a855f7;--yellow:#fbbf24;--orange:#f97316;--pink:#ec4899;
+--text:#e4e4e7;--text-dim:#71717a;--border:#1e1e2e;
+}
+body{font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+
+/* ═══ GLITCH BRAND EFFECTS ═══ */
+/* Scanline overlay on entire page */
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);opacity:0.4}
+
+/* Screen tear effect — random horizontal glitch lines */
+@keyframes screenTear{
+  0%,95%,100%{clip-path:none;transform:none}
+  96%{clip-path:inset(40% 0 50% 0);transform:translateX(-3px)}
+  97%{clip-path:inset(10% 0 80% 0);transform:translateX(2px)}
+  98%{clip-path:none;transform:none}
+}
+
+/* Glitch text — apply to any element with .glitch-text */
+.glitch-text{position:relative;display:inline-block}
+.glitch-text::before,.glitch-text::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%}
+.glitch-text::before{color:var(--cyan);animation:glitchClip1 4s ease-in-out infinite;clip-path:inset(0 0 0 0)}
+.glitch-text::after{color:var(--red);animation:glitchClip2 4s ease-in-out infinite;clip-path:inset(0 0 0 0)}
+@keyframes glitchClip1{0%,88%,100%{clip-path:inset(0 0 0 0);transform:translate(0)}90%{clip-path:inset(30% 0 50% 0);transform:translate(-2px,-1px)}92%{clip-path:inset(60% 0 20% 0);transform:translate(2px,1px)}94%{clip-path:inset(0 0 0 0);transform:translate(0)}}
+@keyframes glitchClip2{0%,91%,100%{clip-path:inset(0 0 0 0);transform:translate(0)}93%{clip-path:inset(10% 0 70% 0);transform:translate(3px,1px)}95%{clip-path:inset(50% 0 30% 0);transform:translate(-2px,-1px)}97%{clip-path:inset(0 0 0 0);transform:translate(0)}}
+
+/* RGB split on headings */
+.rgb-split{text-shadow:2px 0 var(--cyan),-2px 0 var(--red);animation:rgbFlicker 6s ease-in-out infinite}
+@keyframes rgbFlicker{0%,92%,100%{text-shadow:0 0 transparent}94%{text-shadow:2px 0 var(--cyan),-2px 0 var(--red)}96%{text-shadow:-1px 0 var(--cyan),1px 0 var(--red)}98%{text-shadow:0 0 transparent}}
+
+/* Static noise overlay that flashes */
+.noise-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;opacity:0;animation:noiseFlash 8s ease-in-out infinite}
+@keyframes noiseFlash{0%,97%,100%{opacity:0}98%{opacity:0.03}99%{opacity:0}}
+
+/* CANVAS */
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;position:relative;z-index:1}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* ═══ LANDING ═══ */
+.landing{padding:2rem;text-align:center}
+.landing-badge{display:inline-block;padding:0.4rem 1.2rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:50px;font-size:0.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:3px;margin-bottom:2rem;animation:badgePulse 3s ease-in-out infinite}
+@keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.15)}50%{box-shadow:0 0 30px 8px rgba(0,212,255,0.08)}}
+
+.landing-title{font-size:clamp(2.5rem,8vw,5rem);font-weight:800;letter-spacing:-2px;margin-bottom:0.5rem;position:relative}
+.landing-title .word1{background:linear-gradient(135deg,var(--text-dim),var(--text));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:300;font-size:clamp(1.2rem,3vw,1.8rem);display:block;letter-spacing:4px;text-transform:uppercase;margin-bottom:0.3rem}
+.landing-title .word2{background:linear-gradient(135deg,var(--cyan),var(--purple),var(--cyan));background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradShift 4s ease infinite}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+.landing-sub{font-size:clamp(0.85rem,2vw,1.1rem);color:var(--text-dim);max-width:550px;margin:1.5rem auto 2.5rem;font-weight:300;line-height:1.8}
+.landing-sub em{color:var(--text);font-style:normal;font-weight:500}
+
+/* Glitch effect on hover */
+.glitch-hover{position:relative;display:inline-block}
+.glitch-hover::before,.glitch-hover::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;background:inherit;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.glitch-hover::before{animation:g1 5s ease-in-out infinite}
+.glitch-hover::after{animation:g2 5s ease-in-out infinite}
+@keyframes g1{0%,90%,100%{clip-path:inset(0 0 0 0);transform:translate(0)}92%{clip-path:inset(20% 0 60% 0);transform:translate(-3px,1px)}94%{clip-path:inset(0 0 0 0)}}
+@keyframes g2{0%,93%,100%{clip-path:inset(0 0 0 0);transform:translate(0)}95%{clip-path:inset(40% 0 30% 0);transform:translate(2px,-2px)}97%{clip-path:inset(0 0 0 0)}}
+
+/* CTA */
+.cta{padding:1rem 2.5rem;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#000;font-weight:700;font-size:1rem;border:none;border-radius:12px;cursor:pointer;font-family:inherit;transition:all 0.3s;position:relative;overflow:hidden}
+.cta:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(0,212,255,0.3)}
+.cta::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,0.1) 50%,transparent 70%);animation:shine 3s ease-in-out infinite}
+@keyframes shine{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}
+
+.cta-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.cta-ghost:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:none}
+
+.cta-group{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+
+/* Social proof ticker */
+.ticker{margin-top:4rem;display:flex;gap:2rem;flex-wrap:wrap;justify-content:center}
+.ticker-item{display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--text-dim)}
+.ticker-num{color:var(--cyan);font-weight:700;font-size:1rem}
+
+/* ═══ BUILD SHOWCASE ═══ */
+.showcase{width:95%;max-width:700px;margin:2.5rem auto 0;position:relative;height:340px;overflow:hidden}
+/* Scanline overlay on showcase */
+.showcase::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,212,255,0.015) 3px,rgba(0,212,255,0.015) 6px);mix-blend-mode:overlay}
+.showcase-card{position:absolute;width:100%;opacity:0;transform:scale(0.95) translateY(10px);transition:all 0.6s cubic-bezier(0.16,1,0.3,1);pointer-events:none}
+.showcase-card.active{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
+.showcase-card.prev{opacity:0;transform:scale(0.95) translateY(-10px)}
+/* Glitch transition — card gets RGB split + pixel tear on exit */
+.showcase-card.glitch-out{animation:scGlitchOut 0.4s ease forwards}
+@keyframes scGlitchOut{
+  0%{opacity:1;transform:scale(1) translateY(0);filter:none;clip-path:none}
+  20%{opacity:0.9;transform:scale(1) translateX(-3px);filter:blur(0);clip-path:inset(10% 0 80% 0)}
+  40%{opacity:0.7;transform:scale(1) translateX(4px);filter:blur(1px);clip-path:inset(40% 0 40% 0)}
+  60%{opacity:0.4;transform:scale(0.98) translateX(-2px) skewX(2deg);filter:blur(2px);clip-path:inset(60% 0 20% 0)}
+  100%{opacity:0;transform:scale(0.95) translateY(-10px);filter:blur(4px)}
+}
+/* Glitch transition — card tears in with pixel effect */
+.showcase-card.glitch-in{animation:scGlitchIn 0.5s ease forwards}
+@keyframes scGlitchIn{
+  0%{opacity:0;transform:scale(1.02) translateY(10px);filter:blur(3px);clip-path:inset(50% 0 50% 0)}
+  30%{opacity:0.5;transform:scale(1) translateX(3px) skewX(-1deg);filter:blur(1px);clip-path:inset(20% 0 60% 0)}
+  50%{opacity:0.8;transform:scale(1) translateX(-2px);filter:blur(0);clip-path:inset(0 0 30% 0)}
+  70%{opacity:0.9;transform:scale(1) translateX(1px);clip-path:inset(0 20% 0 0)}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:none;clip-path:none}
+}
+
+.sc-window{background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 0 60px rgba(0,212,255,0.06);position:relative}
+/* Pixel noise on window hover */
+.sc-window::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3;opacity:0;transition:opacity 0.3s;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%221.2%22 numOctaves=%222%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%220.03%22/></svg>')}
+.sc-window:hover::before{opacity:1}
+.sc-bar{display:flex;align-items:center;gap:5px;padding:0.5rem 0.8rem;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border)}
+.sc-bar span{width:8px;height:8px;border-radius:50%}
+.sc-bar span:nth-child(1){background:var(--red)}
+.sc-bar span:nth-child(2){background:var(--yellow)}
+.sc-bar span:nth-child(3){background:var(--green)}
+.sc-bar-title{margin-left:auto;font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
+.sc-body{padding:1.2rem;min-height:230px}
+
+/* Dashboard mockup styles */
+.sc-stat-row{display:flex;gap:0.6rem;margin-bottom:0.8rem}
+.sc-stat{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:0.7rem;text-align:center}
+.sc-stat-val{font-size:1.2rem;font-weight:800}
+.sc-stat-label{font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:0.15rem}
+.sc-chart{display:flex;align-items:flex-end;gap:3px;height:60px;margin:0.8rem 0}
+.sc-chart-bar{flex:1;border-radius:3px 3px 0 0;animation:chartGrow 0.8s ease forwards;transform-origin:bottom}
+@keyframes chartGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.sc-feed{list-style:none;padding:0}
+.sc-feed li{display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.7rem;border-bottom:1px solid rgba(255,255,255,0.03)}
+.sc-feed li:last-child{border:none}
+.sc-feed-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sc-feed-time{margin-left:auto;color:var(--text-dim);font-size:0.6rem}
+.sc-row{display:flex;gap:0.6rem}
+.sc-col{flex:1}
+.sc-badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;animation:badgeGlitch 6s ease infinite}
+@keyframes badgeGlitch{0%,93%,100%{transform:none;text-shadow:none}94%{transform:translateX(-1px) skewX(1deg);text-shadow:1px 0 var(--cyan),-1px 0 var(--red)}96%{transform:translateX(1px) skewX(-1deg);text-shadow:-1px 0 var(--cyan),1px 0 var(--red)}98%{transform:none;text-shadow:none}}
+.sc-caption{text-align:center;margin-top:0.8rem}
+.sc-caption-title{font-size:0.85rem;font-weight:700;color:var(--text)}
+.sc-caption-sub{font-size:0.65rem;color:var(--text-dim);margin-top:0.15rem}
+.sc-caption-arch{font-size:0.6rem;margin-top:0.3rem}
+
+/* Progress bars for social stats */
+.sc-prog{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:0.3rem}
+.sc-prog-fill{height:100%;border-radius:2px;animation:progGrow 1.5s ease forwards}
+@keyframes progGrow{from{width:0}to{width:var(--w)}}
+
+/* Showcase dots */
+.showcase-dots{display:flex;justify-content:center;gap:6px;margin-top:0.8rem}
+.showcase-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:all 0.3s}
+.showcase-dot.active{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+
+/* Live social proof feed */
+.live-feed{position:fixed;bottom:1.5rem;left:1.5rem;z-index:100;pointer-events:none}
+.feed-toast{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.6rem;font-size:0.7rem;box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:toastGlitchIn 0.5s ease,toastGlitchOut 0.5s ease 4.5s forwards;max-width:320px;position:relative;overflow:hidden}
+.feed-toast::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,0.02) 2px,rgba(0,212,255,0.02) 4px);pointer-events:none}
+@keyframes toastGlitchIn{0%{opacity:0;transform:translateY(20px) scale(0.95) skewX(3deg);clip-path:inset(30% 0 50% 0)}30%{opacity:0.7;transform:translateY(5px) scale(0.98) skewX(-1deg);clip-path:inset(0 40% 0 0)}60%{opacity:0.9;transform:translateY(-2px) scale(1);clip-path:none}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes toastGlitchOut{0%{opacity:1;transform:translateY(0)}30%{opacity:0.8;transform:translateX(-3px) skewX(2deg);clip-path:inset(20% 0 60% 0)}60%{opacity:0.4;transform:translateX(4px);clip-path:inset(50% 0 30% 0)}100%{opacity:0;transform:translateY(-10px);clip-path:inset(50% 0 50% 0)}}
+.feed-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;animation:dotPulse 1s ease-in-out infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.feed-text{color:var(--text-dim)}
+.feed-text strong{color:var(--text);font-weight:600}
+.feed-time{color:#444;font-size:0.6rem;margin-left:auto;flex-shrink:0}
+
+/* Mid-quiz insight cards */
+.quiz-insight{background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(168,85,247,0.04));border:1px solid rgba(0,212,255,0.15);border-radius:12px;padding:1rem 1.2rem;margin:1rem 0 1.5rem;animation:insightIn 0.6s ease}
+@keyframes insightIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.quiz-insight-label{font-size:0.55rem;text-transform:uppercase;letter-spacing:2px;color:var(--cyan);margin-bottom:0.3rem;display:flex;align-items:center;gap:0.4rem}
+.quiz-insight-label::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:dotPulse 1s ease-in-out infinite}
+.quiz-insight-text{font-size:0.8rem;color:var(--text);font-weight:500;line-height:1.5}
+
+/* Exit intent overlay */
+.exit-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;animation:fadeIn 0.3s ease}
+.exit-overlay.show{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.exit-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2.5rem 2rem;max-width:420px;width:90%;text-align:center;animation:exitPop 0.4s cubic-bezier(0.16,1,0.3,1)}
+@keyframes exitPop{from{opacity:0;transform:scale(0.8) translateY(30px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.exit-close{position:absolute;top:1rem;right:1.2rem;background:none;border:none;color:var(--text-dim);font-size:1.2rem;cursor:pointer}
+
+/* ═══ GATE ═══ */
+.gate-wrap{padding:2rem;max-width:460px;width:90%}
+.gate-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2.5rem 2rem;text-align:center;box-shadow:0 0 80px rgba(0,212,255,0.06);animation:float 6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+.gate-icon{font-size:3rem;margin-bottom:1rem;filter:drop-shadow(0 0 20px rgba(0,212,255,0.4))}
+.gate-title{font-size:1.3rem;font-weight:700;margin-bottom:0.5rem}
+.gate-desc{font-size:0.8rem;color:var(--text-dim);margin-bottom:1.5rem}
+.gate-price{margin-bottom:1.5rem}
+.gate-price-big{font-size:2.5rem;font-weight:800;color:var(--cyan)}
+.gate-price-old{font-size:0.9rem;color:var(--text-dim);text-decoration:line-through;margin-left:0.5rem}
+.gate-price-label{font-size:0.7rem;color:var(--text-dim);display:block;margin-top:0.2rem}
+
+.gate-input{width:100%;padding:0.8rem 1rem;background:#000;border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.85rem;margin-bottom:0.6rem;transition:border-color 0.3s}
+.gate-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,0.08)}
+.gate-input::placeholder{color:#444}
+
+.gate-includes{text-align:left;margin:1.2rem 0;padding:0.8rem 1rem;background:rgba(0,230,118,0.03);border-radius:10px;border:1px solid rgba(0,230,118,0.08)}
+.gate-inc-item{font-size:0.75rem;color:var(--text-dim);padding:0.25rem 0;display:flex;align-items:center;gap:0.4rem}
+.gate-inc-item::before{content:'\2713';color:var(--green);font-weight:700}
+
+.gate-trust{display:flex;justify-content:center;gap:1.2rem;margin-top:1rem;font-size:0.65rem;color:var(--text-dim)}
+
+/* Urgency bar */
+.urgency-bar{background:linear-gradient(90deg,rgba(255,48,80,0.12),rgba(255,48,80,0.04));border:1px solid rgba(255,48,80,0.25);border-radius:12px;padding:0.6rem 1rem;margin-bottom:1.2rem;animation:urgPulse 2s ease-in-out infinite}
+@keyframes urgPulse{0%,100%{border-color:rgba(255,48,80,0.25);box-shadow:0 0 0 0 rgba(255,48,80,0)}50%{border-color:rgba(255,48,80,0.5);box-shadow:0 0 20px rgba(255,48,80,0.1)}}
+.urgency-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:2px;color:var(--red);font-weight:700;margin-bottom:0.3rem}
+.urgency-timer{font-size:1.4rem;font-weight:800;color:#fff;letter-spacing:1px;font-variant-numeric:tabular-nums}
+.urgency-timer span{color:var(--red)}
+.urgency-sub{font-size:0.6rem;color:var(--text-dim);margin-top:0.2rem}
+
+/* Price anchor */
+.gate-price-anchor{display:flex;align-items:center;justify-content:center;gap:0.8rem;margin-bottom:0.3rem;flex-wrap:wrap}
+.gate-price-was{font-size:1.4rem;font-weight:700;color:var(--text-dim);text-decoration:line-through;position:relative}
+.gate-price-was::after{content:'';position:absolute;left:-4px;right:-4px;top:50%;height:2px;background:var(--red);transform:rotate(-5deg)}
+.gate-price-arrow{font-size:1.2rem;color:var(--red);animation:arrowBounce 1s ease infinite}
+@keyframes arrowBounce{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+.gate-price-now{font-size:2.8rem;font-weight:800;color:var(--cyan);text-shadow:0 0 30px rgba(0,212,255,0.3)}
+.gate-save-badge{display:inline-block;padding:0.25rem 0.7rem;background:linear-gradient(135deg,var(--green),#00b85e);color:#000;font-size:0.65rem;font-weight:800;border-radius:50px;text-transform:uppercase;letter-spacing:1px;animation:badgeGlow 2s ease-in-out infinite}
+@keyframes badgeGlow{0%,100%{box-shadow:0 0 8px rgba(0,230,118,0.3)}50%{box-shadow:0 0 20px rgba(0,230,118,0.5)}}
+.gate-spots{font-size:0.7rem;color:var(--orange);margin-top:0.4rem;font-weight:600}
+.gate-spots span{color:#fff;font-weight:800}
+
+/* ═══ QUIZ ═══ */
+.quiz-wrap{padding:2rem;max-width:600px;width:95%}
+
+.quiz-progress{display:flex;gap:4px;margin-bottom:2rem}
+.quiz-bar{height:4px;flex:1;border-radius:2px;background:var(--border);transition:background 0.4s}
+.quiz-bar.done{background:var(--green)}
+.quiz-bar.active{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+
+.quiz-q{animation:fadeUp 0.4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.quiz-num{font-size:0.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:3px;margin-bottom:0.75rem}
+.quiz-question{font-size:1.3rem;font-weight:600;margin-bottom:0.5rem;line-height:1.4}
+.quiz-hint{font-size:0.8rem;color:var(--text-dim);margin-bottom:1.5rem}
+
+.quiz-options{display:grid;gap:0.75rem}
+
+.quiz-opt{background:var(--bg2);border:2px solid var(--border);border-radius:12px;padding:1rem 1.2rem;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;gap:0.75rem;text-align:left}
+.quiz-opt:hover{border-color:rgba(0,212,255,0.3);transform:translateX(4px)}
+.quiz-opt.selected{border-color:var(--cyan);background:rgba(0,212,255,0.04)}
+.quiz-opt-icon{font-size:1.5rem;flex-shrink:0}
+.quiz-opt-text{font-size:0.85rem;font-weight:500}
+.quiz-opt-sub{font-size:0.7rem;color:var(--text-dim);margin-top:0.15rem}
+
+/* Multi-select */
+.quiz-multi .quiz-opt.selected{border-color:var(--green)}
+.quiz-multi .quiz-opt.selected::after{content:'\2713';margin-left:auto;color:var(--green);font-weight:700}
+
+/* Slider input */
+.quiz-slider{width:100%;margin:1.5rem 0;-webkit-appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none}
+.quiz-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 10px rgba(0,212,255,0.4)}
+.slider-labels{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim)}
+.slider-value{text-align:center;font-size:1.5rem;font-weight:700;color:var(--cyan);margin-top:0.5rem}
+
+/* Text input in quiz */
+.quiz-text-input{width:100%;padding:0.8rem 1rem;background:#000;border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.9rem;transition:border-color 0.3s}
+.quiz-text-input:focus{outline:none;border-color:var(--cyan)}
+
+.quiz-nav{display:flex;justify-content:space-between;margin-top:2rem}
+.quiz-next{padding:0.75rem 1.8rem;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#000;font-weight:700;font-size:0.85rem;border:none;border-radius:10px;cursor:pointer;font-family:inherit;transition:all 0.3s}
+.quiz-next:hover{transform:translateY(-2px);box-shadow:0 0 20px rgba(0,212,255,0.3)}
+.quiz-next:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none}
+.quiz-back{padding:0.75rem 1.2rem;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:inherit;font-size:0.8rem}
+
+/* ═══ REVEAL ═══ */
+.reveal-wrap{padding:2rem;max-width:650px;width:95%;text-align:center}
+
+.reveal-loading{margin-bottom:2rem}
+.reveal-spinner{width:60px;height:60px;border:3px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.reveal-loading-text{font-size:0.8rem;color:var(--text-dim);animation:loadPulse 1.5s ease-in-out infinite}
+@keyframes loadPulse{0%,100%{opacity:0.5}50%{opacity:1}}
+
+.reveal-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2.5rem 2rem;animation:revealIn 0.8s cubic-bezier(0.16,1,0.3,1);display:none}
+@keyframes revealIn{from{opacity:0;transform:scale(0.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+.reveal-archetype-icon{font-size:5rem;margin-bottom:1rem;filter:drop-shadow(0 0 30px rgba(0,212,255,0.5));animation:iconPulse 2s ease-in-out infinite}
+@keyframes iconPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 20px rgba(0,212,255,0.4))}50%{transform:scale(1.08);filter:drop-shadow(0 0 40px rgba(0,212,255,0.6))}}
+
+.reveal-youare{font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:3px;margin-bottom:0.3rem}
+.reveal-name{font-size:2.2rem;font-weight:800;margin-bottom:0.5rem}
+.reveal-tagline{font-size:0.9rem;color:var(--text-dim);margin-bottom:1.5rem;font-style:italic}
+
+.reveal-desc{font-size:0.85rem;color:var(--text-dim);line-height:1.7;text-align:left;margin-bottom:1.5rem;padding:1rem 1.2rem;background:rgba(0,212,255,0.03);border-radius:10px;border:1px solid rgba(0,212,255,0.06)}
+
+.reveal-builds{text-align:left;margin-bottom:1.5rem}
+.reveal-builds-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-dim);margin-bottom:0.5rem}
+.reveal-build-item{font-size:0.8rem;padding:0.35rem 0;display:flex;align-items:center;gap:0.5rem}
+.reveal-build-item::before{content:'>';color:var(--cyan);font-weight:700}
+
+.reveal-community{background:rgba(0,230,118,0.04);border:1px solid rgba(0,230,118,0.1);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.5rem;text-align:left}
+.reveal-community-title{font-size:0.8rem;font-weight:600;color:var(--green);margin-bottom:0.3rem}
+.reveal-community-desc{font-size:0.75rem;color:var(--text-dim)}
+
+/* ═══ GUIDE ═══ */
+.guide-wrap{padding:2rem;max-width:820px;width:95%}
+
+.guide-header{text-align:center;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.guide-badge{display:inline-block;padding:0.3rem 0.8rem;border-radius:6px;font-size:0.65rem;font-weight:700;margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:1px}
+.guide-title{font-size:1.8rem;font-weight:700}
+
+.guide-steps{display:flex;gap:4px;margin-bottom:2rem}
+.guide-step-dot{height:4px;flex:1;border-radius:2px;background:var(--border);transition:all 0.4s}
+.guide-step-dot.done{background:var(--green)}
+.guide-step-dot.active{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+
+.guide-step{display:none;animation:fadeUp 0.4s ease}
+.guide-step.active{display:block}
+
+.guide-step-num{font-size:0.65rem;color:var(--cyan);text-transform:uppercase;letter-spacing:3px;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem}
+.guide-step-num::before{content:'';width:20px;height:1px;background:var(--cyan)}
+.guide-step-title{font-size:1.6rem;font-weight:700;margin-bottom:0.5rem}
+.guide-step-desc{font-size:0.85rem;color:var(--text-dim);margin-bottom:1.5rem}
+
+/* Visual headers */
+.step-vis{width:100%;height:180px;border-radius:16px;margin-bottom:1.5rem;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.step-vis-icon{font-size:3.5rem;z-index:1;filter:drop-shadow(0 0 25px rgba(0,212,255,0.5));animation:iFloat 3s ease-in-out infinite}
+@keyframes iFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.step-vis-bg{position:absolute;top:0;left:0;width:100%;height:100%}
+.sv1{background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(168,85,247,0.04));animation:bgShift 10s ease infinite}
+.sv2{background:linear-gradient(135deg,rgba(0,230,118,0.05),rgba(0,212,255,0.04))}
+.sv3{background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(249,115,22,0.04))}
+@keyframes bgShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.orb{position:absolute;border-radius:50%;filter:blur(40px);animation:orbF 8s ease-in-out infinite}
+.o1{width:100px;height:100px;background:rgba(0,212,255,0.12);top:10%;left:10%}
+.o2{width:70px;height:70px;background:rgba(168,85,247,0.1);bottom:15%;right:10%;animation-delay:-3s}
+.o3{width:50px;height:50px;background:rgba(0,230,118,0.08);top:40%;right:25%;animation-delay:-5s}
+@keyframes orbF{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(10px,-15px) scale(1.1)}50%{transform:translate(-8px,12px) scale(0.9)}75%{transform:translate(15px,8px) scale(1.05)}}
+
+/* Cards & Code */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.2rem;transition:all 0.3s}
+.card:hover{border-color:rgba(0,212,255,0.15);transform:translateY(-2px)}
+.card-title{font-size:0.95rem;font-weight:600;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.5rem}
+.card-body{font-size:0.82rem;color:var(--text-dim)}
+.card-body p{margin-bottom:0.6rem}
+.card-body strong{color:var(--text)}
+
+.code-block{background:#000;border:1px solid var(--border);border-radius:10px;margin:1rem 0;overflow:hidden}
+.code-head{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 1rem;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border)}
+.code-dots{display:flex;gap:5px}
+.code-dots span{width:8px;height:8px;border-radius:50%}
+.code-dots span:nth-child(1){background:var(--red)}
+.code-dots span:nth-child(2){background:var(--yellow)}
+.code-dots span:nth-child(3){background:var(--green)}
+.code-label{font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
+.copy-btn{background:none;border:1px solid var(--border);color:var(--text-dim);padding:0.2rem 0.6rem;border-radius:5px;cursor:pointer;font-family:inherit;font-size:0.6rem;transition:all 0.2s}
+.copy-btn:hover{border-color:var(--green);color:var(--green)}
+.copy-btn.copied{border-color:var(--green);color:var(--green);background:rgba(0,230,118,0.06)}
+.code-body{padding:1rem;font-size:0.75rem;line-height:1.9;overflow-x:auto;white-space:pre;color:var(--green)}
+.code-body .c{color:#555}
+.code-body .s{color:var(--yellow)}
+.code-body .k{color:var(--cyan)}
+
+.alert{padding:0.9rem 1.1rem;border-radius:10px;margin:1rem 0;font-size:0.8rem;border-left:3px solid}
+.alert-info{background:rgba(0,212,255,0.03);border-color:var(--cyan)}
+.alert-warn{background:rgba(251,191,36,0.03);border-color:var(--yellow)}
+.alert-danger{background:rgba(255,48,80,0.03);border-color:var(--red)}
+.alert-success{background:rgba(0,230,118,0.03);border-color:var(--green)}
+
+.guide-nav{display:flex;justify-content:space-between;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+
+/* ═══ INITIATION SEQUENCE ═══ */
+.init-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.init-overlay *{font-family:'JetBrains Mono',monospace}
+.init-welcome{font-size:clamp(1.2rem,4vw,2rem);font-weight:800;color:var(--cyan);opacity:0;animation:initFadeIn 1s ease forwards;text-align:center;text-shadow:0 0 40px rgba(0,212,255,0.4)}
+@keyframes initFadeIn{from{opacity:0;transform:translateY(10px);letter-spacing:15px}to{opacity:1;transform:translateY(0);letter-spacing:2px}}
+.init-sub{font-size:0.75rem;color:var(--text-dim);margin-top:0.5rem;opacity:0;animation:initFadeIn 0.8s ease 0.8s forwards;text-align:center}
+.init-agents{margin-top:2.5rem;width:90%;max-width:500px}
+.init-agent-row{display:flex;align-items:center;gap:0.8rem;margin-bottom:1.2rem;opacity:0}
+.init-agent-row.show{animation:agentSlideIn 0.5s ease forwards}
+@keyframes agentSlideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+.init-agent-icon{font-size:1.5rem;flex-shrink:0;filter:drop-shadow(0 0 10px rgba(0,212,255,0.4))}
+.init-agent-info{flex:1}
+.init-agent-name{font-size:0.8rem;font-weight:700;color:var(--text);margin-bottom:0.3rem}
+.init-agent-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.init-agent-fill{height:100%;width:0;border-radius:2px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1)}
+.init-agent-fill.go{width:100%}
+.init-agent-status{font-size:0.6rem;color:var(--text-dim);margin-top:0.2rem;text-transform:uppercase;letter-spacing:2px}
+.init-agent-status.done{color:var(--green)}
+
+.init-grants{margin-top:2rem;width:90%;max-width:500px}
+.init-grant{font-size:0.75rem;padding:0.4rem 0;opacity:0;display:flex;align-items:center;gap:0.5rem}
+.init-grant.show{animation:grantFlash 0.4s ease forwards}
+@keyframes grantFlash{from{opacity:0;color:var(--cyan);text-shadow:0 0 20px var(--cyan)}to{opacity:1;color:var(--green);text-shadow:none}}
+.init-grant::before{content:'\u2713';color:var(--green);font-weight:700}
+
+.init-enter{margin-top:2.5rem;opacity:0}
+.init-enter.show{animation:initFadeIn 0.6s ease forwards}
+
+/* Matrix rain effect for init */
+.matrix-col{position:absolute;font-size:0.6rem;color:rgba(0,212,255,0.15);writing-mode:vertical-rl;animation:matrixFall linear forwards;pointer-events:none;z-index:-1}
+@keyframes matrixFall{from{transform:translateY(-100%);opacity:0.3}to{transform:translateY(100vh);opacity:0}}
+
+/* Seat badge for inner circle */
+.init-seat{font-size:2rem;font-weight:800;color:var(--cyan);border:2px solid var(--cyan);border-radius:50%;width:80px;height:80px;display:flex;align-items:center;justify-content:center;margin:1rem auto;box-shadow:0 0 30px rgba(0,212,255,0.3);animation:seatPulse 2s ease-in-out infinite}
+@keyframes seatPulse{0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.2)}50%{box-shadow:0 0 50px rgba(0,212,255,0.5)}}
+
+/* ═══ PRICING ═══ */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.5rem;margin:2rem 0}
+.price-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem 1.5rem;text-align:center;transition:all 0.3s;position:relative;overflow:hidden}
+.price-card:hover{transform:translateY(-4px)}
+.price-card.feat{border-color:var(--cyan);box-shadow:0 0 40px rgba(0,212,255,0.08)}
+.price-card.feat::before{content:'RECOMMENDED';position:absolute;top:0;left:0;right:0;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#000;font-size:0.55rem;font-weight:700;padding:0.3rem;letter-spacing:2px}
+.price-name{font-size:1rem;font-weight:700;margin-top:0.5rem}
+.price-amt{font-size:2.5rem;font-weight:800;color:var(--cyan)}
+.price-per{font-size:0.65rem;color:var(--text-dim);margin-bottom:1.2rem}
+.price-feats{list-style:none;text-align:left;margin-bottom:1.2rem}
+.price-feats li{padding:0.3rem 0;font-size:0.75rem;color:var(--text-dim);padding-left:1.3rem;position:relative}
+.price-feats li::before{content:'+';position:absolute;left:0;color:var(--green);font-weight:700}
+
+/* ═══ PAYWALL ═══ */
+.paywall{text-align:center;animation:fadeUp 0.5s ease}
+.paywall-lock{font-size:4rem;margin-bottom:1rem;animation:lockPulse 2s ease-in-out infinite}
+@keyframes lockPulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 15px rgba(0,212,255,0.3))}50%{transform:scale(1.05);filter:drop-shadow(0 0 30px rgba(0,212,255,0.5))}}
+.paywall-title{font-size:1.5rem;font-weight:800;margin-bottom:0.5rem}
+.paywall-sub{font-size:0.85rem;color:var(--text-dim);margin-bottom:1.5rem;max-width:400px;margin-left:auto;margin-right:auto}
+
+.paywall-preview{text-align:left;margin:1.5rem 0;padding:0;list-style:none}
+.paywall-preview li{padding:0.6rem 1rem;font-size:0.8rem;display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid var(--border)}
+.paywall-preview li:last-child{border-bottom:none}
+.pw-locked{color:var(--text-dim);opacity:0.5}
+.pw-locked::before{content:'\u{1F512}';font-size:0.7rem}
+.pw-unlocked{color:var(--green)}
+.pw-unlocked::before{content:'\u2713';color:var(--green);font-weight:700;font-size:0.8rem}
+
+.paywall-price{margin:1.5rem 0}
+.paywall-price-was{font-size:1.1rem;color:var(--text-dim);text-decoration:line-through}
+.paywall-price-now{font-size:3rem;font-weight:800;color:var(--cyan);text-shadow:0 0 30px rgba(0,212,255,0.3)}
+.paywall-price-label{font-size:0.7rem;color:var(--text-dim)}
+
+.paywall-guarantee{display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:1rem;font-size:0.7rem;color:var(--text-dim)}
+.paywall-stats{display:flex;justify-content:center;gap:2rem;margin:1.5rem 0;flex-wrap:wrap}
+.paywall-stat{text-align:center}
+.paywall-stat-num{font-size:1.3rem;font-weight:800;color:var(--cyan)}
+.paywall-stat-label{font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px}
+
+/* Arch grid */
+.arch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;margin:1.2rem 0}
+.arch-node{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:0.8rem 0.4rem;text-align:center;transition:all 0.3s}
+.arch-node:hover{border-color:var(--cyan);transform:translateY(-3px)}
+.arch-icon{font-size:1.5rem;margin-bottom:0.3rem}
+.arch-name{font-weight:700;font-size:0.65rem}
+.arch-role{font-size:0.55rem;color:var(--text-dim)}
+
+/* ═══ GLITCH ROTATOR ═══ */
+.glitch-rotator{margin:1.5rem auto 0;max-width:550px;height:3rem;position:relative;overflow:hidden}
+.glitch-phrase{position:absolute;width:100%;text-align:center;font-size:clamp(0.9rem,2.5vw,1.2rem);font-weight:600;opacity:0;transform:translateY(20px)}
+.glitch-phrase .gp-prefix{color:var(--text-dim);font-weight:300}
+.glitch-phrase .gp-main{color:var(--cyan);position:relative;display:inline-block}
+.glitch-phrase.active{animation:phraseIn 0.15s steps(3) forwards}
+.glitch-phrase.out{animation:phraseOut 0.15s steps(3) forwards}
+@keyframes phraseIn{
+  0%{opacity:0;transform:translateY(8px) skewX(-5deg);filter:blur(4px);clip-path:inset(0 60% 0 0)}
+  33%{opacity:0.7;transform:translateY(-2px) skewX(3deg);filter:blur(1px);clip-path:inset(30% 0 40% 0)}
+  66%{opacity:0.9;transform:translateY(1px) skewX(-1deg);filter:blur(0);clip-path:inset(0 0 0 30%)}
+  100%{opacity:1;transform:translateY(0) skewX(0);filter:blur(0);clip-path:none}
+}
+@keyframes phraseOut{
+  0%{opacity:1;transform:translateY(0);filter:blur(0);clip-path:none}
+  33%{opacity:0.7;transform:translateY(2px) skewX(4deg);filter:blur(1px);clip-path:inset(20% 0 50% 0)}
+  66%{opacity:0.3;transform:translateY(-5px) skewX(-3deg);filter:blur(3px);clip-path:inset(0 40% 0 0)}
+  100%{opacity:0;transform:translateY(-15px);filter:blur(6px);clip-path:inset(50% 0 50% 0)}
+}
+/* RGB tear on the active phrase keyword */
+.gp-main::before,.gp-main::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.gp-main::before{color:var(--red);clip-path:inset(0 0 65% 0);transform:translate(-2px,0);opacity:0;animation:gpTear1 4s ease-in-out infinite}
+.gp-main::after{color:var(--purple);clip-path:inset(65% 0 0 0);transform:translate(2px,0);opacity:0;animation:gpTear2 4s ease-in-out infinite}
+@keyframes gpTear1{0%,85%,100%{opacity:0}88%{opacity:0.8;transform:translate(-3px,1px)}91%{opacity:0}}
+@keyframes gpTear2{0%,87%,100%{opacity:0}90%{opacity:0.8;transform:translate(2px,-1px)}93%{opacity:0}}
+
+/* ═══ SOCIAL LINKS ═══ */
+.social-bar{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:1rem}
+.social-links{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center}
+.social-link{display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.8rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:0.7rem;text-decoration:none;transition:all 0.3s}
+.social-link:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-2px);box-shadow:0 0 15px rgba(0,212,255,0.1)}
+.social-link-icon{font-size:1rem}
+.social-tag{font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+
+/* Responsive */
+@media(max-width:600px){
+.arch-grid{grid-template-columns:repeat(3,1fr)}
+.pricing-grid{grid-template-columns:1fr}
+.ticker{gap:1rem}
+.gate-card{padding:2rem 1.5rem}
+}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+<div class="noise-overlay" style="background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%223%22 stitchTiles=%22stitch%22/></filter><rect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/></svg>')"></div>
+
+<!-- ═══ SCREEN 1: LANDING ═══ -->
+<section class="screen active landing" id="screenLanding">
+  <div class="landing-badge">your friends don't know about this yet</div>
+  <h1 class="landing-title">
+    <span class="word1">What's Your</span>
+    <span class="word2 glitch-hover" data-text="GLITCH?">GLITCH?</span>
+  </h1>
+  <p class="landing-sub">
+    You're not lazy — you just haven't found <em>your lane</em> yet. Take the quiz, get matched with the AI side hustle that fits <em>your life, your budget, and how your brain actually works</em>.
+  </p>
+
+  <!-- Rotating glitch phrases -->
+  <div class="glitch-rotator" id="glitchRotator"></div>
+
+  <div class="cta-group">
+    <button class="cta" onclick="showScreen('screenGate')">Find My Glitch &rarr;</button>
+  </div>
+
+  <!-- Build Showcase -->
+  <div class="showcase" id="showcase"></div>
+  <div class="showcase-dots" id="showcaseDots"></div>
+
+  <div class="ticker">
+    <div class="ticker-item"><span class="ticker-num" id="ctr1">0</span>&nbsp;people found their glitch</div>
+    <div class="ticker-item"><span class="ticker-num">5</span>&nbsp;AI archetypes</div>
+    <div class="ticker-item"><span class="ticker-num">2 min</span>&nbsp;quiz</div>
+    <div class="ticker-item"><span class="ticker-num">$0</span>&nbsp;to start</div>
+  </div>
+
+  <!-- Social links -->
+  <div class="social-bar">
+    <div class="social-tag">join the movement</div>
+    <div class="social-links">
+      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1d54f;</span> @GlitchNetwork</a>
+      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4dd;</span> Threads</a>
+      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4ac;</span> Discord</a>
+      <a href="#" class="social-link" target="_blank"><span class="social-link-icon">&#x1f4f1;</span> Telegram</a>
+    </div>
+  </div>
+</section>
+
+<!-- Live social proof feed (toast notifications) -->
+<div class="live-feed" id="liveFeed"></div>
+
+<!-- Exit intent overlay -->
+<div class="exit-overlay" id="exitOverlay">
+  <div class="exit-card" style="position:relative">
+    <button class="exit-close" onclick="document.getElementById('exitOverlay').classList.remove('show')">&times;</button>
+    <div style="font-size:2.5rem;margin-bottom:0.8rem">&#x1f914;</div>
+    <div style="font-size:1.2rem;font-weight:800;margin-bottom:0.5rem">you sure?</div>
+    <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:1.5rem;line-height:1.6">It's free. It takes 2 minutes. And you'll know exactly which AI side hustle fits your brain. Close this tab and you'll just keep scrolling.</div>
+    <button class="cta" style="width:100%" onclick="document.getElementById('exitOverlay').classList.remove('show');showScreen('screenGate')">fine, show me &#x2192;</button>
+    <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.8rem">847 people took it today. it's giving answers.</div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 2: GATE ═══ -->
+<section class="screen gate-wrap" id="screenGate">
+  <div class="gate-card">
+    <div class="gate-icon" style="font-size:2.5rem;margin-bottom:0.5rem">&#x26a1;</div>
+    <div class="gate-title rgb-split">2 minutes. Zero cost. Let's go.</div>
+    <div class="gate-desc">Answer 10 quick questions and we'll tell you exactly which AI money machine fits your life. No cap.</div>
+    <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.15);border-radius:10px;padding:0.8rem 1.2rem;margin:1rem 0;font-size:0.8rem;color:var(--green);font-weight:600">&#x2705; 100% FREE — no card, no bs, just answers</div>
+    <input class="gate-input" type="text" id="userName" placeholder="What should we call you?">
+    <input class="gate-input" type="email" id="userEmail" placeholder="Your best email" required>
+    <div class="gate-includes">
+      <div class="gate-inc-item">Find out which AI side hustle fits your brain</div>
+      <div class="gate-inc-item">Get a custom blueprint (yours, not a template)</div>
+      <div class="gate-inc-item">See exactly how people like you are making money</div>
+      <div class="gate-inc-item">Access the Glitch community for free</div>
+    </div>
+    <button class="cta" style="width:100%" onclick="handleGate('free')">&#x26a1; Find My Glitch — It's Free</button>
+    <div class="gate-trust">
+      <span>&#x1f512; Private</span>
+      <span>&#x26a1; Instant results</span>
+      <span>&#x23f1; 2 min</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SCREEN 3: QUIZ ═══ -->
+<section class="screen quiz-wrap" id="screenQuiz">
+  <div class="quiz-progress" id="quizProgress"></div>
+  <div id="quizContainer"></div>
+</section>
+
+<!-- ═══ SCREEN 4: REVEAL ═══ -->
+<section class="screen reveal-wrap" id="screenReveal">
+  <div class="reveal-loading" id="revealLoading">
+    <div class="reveal-spinner"></div>
+    <div class="reveal-loading-text">Analyzing your responses...</div>
+  </div>
+  <div class="reveal-card" id="revealCard"></div>
+</section>
+
+<!-- ═══ SCREEN 5: GUIDE ═══ -->
+<section class="screen guide-wrap" id="screenGuide" style="display:none;align-items:flex-start;">
+  <div id="guideContent" style="width:100%"></div>
+</section>
+
+<script>
+// ═══ STRIPE CHECKOUT ═══
+const STRIPE_PK='pk_live_51TFiEdD1W7kK4TdpInRGe4WPEwrzG1cgnLDJjcZFGw4nuSPF68ojwMSacs06eqj8tdl7nutrbMbJaPPcn7bn9uUG00Fe5A7cGO';
+const stripe=Stripe(STRIPE_PK);
+
+// Price IDs — update these after creating products in Stripe Dashboard
+const STRIPE_PRICES={
+  monthly:'price_1TFiVcD1W7kK4TdppAii1CRq',   // $67/month
+  quarterly:'price_1TFiWXD1W7kK4TdpKA7CZQ9z', // $97/quarter
+  yearly:'price_1TFiYSD1W7kK4TdpWtlYoIvs',     // $197/year
+};
+
+function startStripeCheckout(plan){
+  const priceId=STRIPE_PRICES[plan];
+  if(!priceId||priceId.startsWith('PRICE_ID_')){
+    // Fallback: show "coming soon" if price IDs not set yet
+    const btn=document.querySelector('.pw-deploy-btn');
+    if(btn){btn.textContent='⚡ Setting up payments — check back soon';btn.style.opacity='0.6';}
+    setTimeout(()=>{if(btn){btn.textContent='Deploy Your Agents';btn.style.opacity='1';}},3000);
+    return;
+  }
+  const email=localStorage.getItem('glitch_email')||'';
+  stripe.redirectToCheckout({
+    lineItems:[{price:priceId,quantity:1}],
+    mode:'subscription',
+    successUrl:window.location.origin+window.location.pathname+'?checkout=success&plan='+plan,
+    cancelUrl:window.location.origin+window.location.pathname+'?checkout=cancel',
+    customerEmail:email||undefined,
+  }).then(function(result){
+    if(result.error){console.error(result.error.message);}
+  });
+}
+
+// Handle return from Stripe checkout
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('checkout')==='success'){
+    const plan=params.get('plan')||'yearly';
+    const tierMap={monthly:'guide',quarterly:'builder',yearly:'inner_circle'};
+    localStorage.setItem('glitch_guide_unlocked','true');
+    localStorage.setItem('glitch_tier',tierMap[plan]||'guide');
+    localStorage.setItem('glitch_paid_plan',plan);
+    // Clean URL
+    window.history.replaceState({},'',window.location.pathname);
+  }
+})();
+
+// ═══ PARTICLES ═══
+const canvas=document.getElementById('particles'),ctx=canvas.getContext('2d');let pts=[];
+function rCanvas(){canvas.width=innerWidth;canvas.height=innerHeight}
+rCanvas();addEventListener('resize',rCanvas);
+class P{constructor(){this.r()}r(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.s=Math.random()*1.5+0.5;this.dx=(Math.random()-0.5)*0.3;this.dy=(Math.random()-0.5)*0.3;this.o=Math.random()*0.3+0.1}u(){this.x+=this.dx;this.y+=this.dy;if(this.x<0||this.x>canvas.width||this.y<0||this.y>canvas.height)this.r()}d(){ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,Math.PI*2);ctx.fillStyle=`rgba(0,212,255,${this.o})`;ctx.fill()}}
+for(let i=0;i<60;i++)pts.push(new P());
+function anim(){ctx.clearRect(0,0,canvas.width,canvas.height);pts.forEach(p=>{p.u();p.d()});for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(0,212,255,${0.05*(1-d/100)})`;ctx.lineWidth=0.5;ctx.stroke()}}requestAnimationFrame(anim)}
+anim();
+
+// Counter
+setTimeout(()=>{let v=0;const el=document.getElementById('ctr1');const iv=setInterval(()=>{v+=3;if(v>=247){el.textContent='247';clearInterval(iv)}else el.textContent=v},15)},500);
+
+// ═══ SCREEN NAV (with glitch transition) ═══
+function showScreen(id){
+  // Glitch flash on transition
+  const flash=document.createElement('div');
+  flash.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;background:var(--cyan);mix-blend-mode:overlay;opacity:0.15;animation:glitchFlash 0.3s ease forwards';
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(),400);
+
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none'});
+  const el=document.getElementById(id);
+  el.style.display='flex';
+  setTimeout(()=>el.classList.add('active'),10);
+  scrollTo({top:0});
+}
+// Glitch flash keyframe (inject once)
+if(!document.getElementById('glitchFlashStyle')){
+  const s=document.createElement('style');
+  s.id='glitchFlashStyle';
+  s.textContent=`
+    @keyframes glitchFlash{
+      0%{opacity:0.2;transform:scaleY(1);clip-path:none}
+      15%{opacity:0.4;transform:scaleY(1.01) translateX(-2px);clip-path:inset(20% 0 60% 0)}
+      30%{opacity:0.3;transform:scaleY(1.02) translateX(3px);clip-path:inset(50% 0 30% 0)}
+      45%{opacity:0.15;transform:scaleY(0.99) translateX(-1px);clip-path:inset(10% 0 70% 0)}
+      60%{opacity:0.05;transform:scaleY(0.98);clip-path:none}
+      100%{opacity:0;transform:scaleY(1)}
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+// ═══ COUNTDOWN TIMER ═══
+(function(){
+  const KEY='glitch_timer_end';
+  let end=localStorage.getItem(KEY);
+  if(!end||parseInt(end)<Date.now()){
+    end=Date.now()+5*60*60*1000; // 5 hours from now
+    localStorage.setItem(KEY,end);
+  }else{end=parseInt(end)}
+  function tick(){
+    const el=document.getElementById('countdownTimer');
+    if(!el)return;
+    const left=Math.max(0,end-Date.now());
+    if(left<=0){
+      el.innerHTML='<span>EXPIRED</span>';
+      // Reset for next visitor illusion
+      localStorage.setItem(KEY,Date.now()+5*60*60*1000);
+      return;
+    }
+    const h=Math.floor(left/3600000);
+    const m=Math.floor((left%3600000)/60000);
+    const s=Math.floor((left%60000)/1000);
+    el.innerHTML=String(h).padStart(2,'0')+':'+
+      '<span>'+String(m).padStart(2,'0')+'</span>:'+
+      '<span>'+String(s).padStart(2,'0')+'</span>';
+  }
+  tick();
+  setInterval(tick,1000);
+
+  // Spots counter — slowly ticks down
+  const SPOT_KEY='glitch_spots';
+  let spots=localStorage.getItem(SPOT_KEY);
+  if(!spots||parseInt(spots)<=0){spots=23;localStorage.setItem(SPOT_KEY,spots)}
+  else{spots=parseInt(spots)}
+  const spotEl=document.getElementById('spotsLeft');
+  if(spotEl)spotEl.textContent=spots;
+  // Random chance to decrement spots on page load (creates urgency over repeat visits)
+  if(Math.random()<0.3&&spots>3){
+    spots--;
+    localStorage.setItem(SPOT_KEY,spots);
+    setTimeout(()=>{if(spotEl)spotEl.textContent=spots},Math.random()*30000+10000);
+  }
+})();
+
+// ═══ GLITCH PHRASE ROTATOR ═══
+(function(){
+  const phrases=[
+    ['My glitch is','making $200/day','from my couch'],
+    ['My glitch is','automating my DMs','while I hit the gym'],
+    ['My glitch is','flipping properties','and I\'m only 24'],
+    ['My glitch is','trading crypto','while my friends clock in'],
+    ['My glitch is','selling AI agents','to small businesses'],
+    ['My glitch is','posting 30x a day','without touching my phone'],
+    ['My glitch is','finding deals','before my landlord does'],
+    ['My glitch is','5 income streams','from one laptop'],
+    ['My glitch is','cold outreach on autopilot','while I sleep'],
+    ['My glitch is','scraping leads','and closing them with AI'],
+    ['My glitch is','betting on weather','yeah seriously'],
+    ['My glitch is','quitting my 9-to-5','next month'],
+  ];
+  const container=document.getElementById('glitchRotator');
+  if(!container)return;
+
+  let current=0;
+  let activeEl=null;
+
+  function showPhrase(){
+    const p=phrases[current];
+    // Remove old
+    if(activeEl){
+      activeEl.classList.remove('active');
+      activeEl.classList.add('out');
+      const old=activeEl;
+      setTimeout(()=>old.remove(),200);
+    }
+    // Create new
+    const div=document.createElement('div');
+    div.className='glitch-phrase';
+    div.innerHTML=`<span class="gp-prefix">${p[0]} </span><span class="gp-main" data-text="${p[1]}">${p[1]}</span><span class="gp-prefix"> ${p[2]}</span>`;
+    container.appendChild(div);
+    // Trigger animation next frame
+    requestAnimationFrame(()=>{
+      div.classList.add('active');
+    });
+    activeEl=div;
+    current=(current+1)%phrases.length;
+  }
+
+  // Start with slight delay
+  setTimeout(showPhrase,800);
+  setInterval(showPhrase,3000);
+})();
+
+// ═══ BUILD SHOWCASE ═══
+(function(){
+  const builds=[
+    // 1: Weather Trading Dashboard
+    {title:'Weather Trading Bot',sub:'Scans 20 cities. Buys mispriced contracts. Auto-sells for profit.',arch:'\u26c8\ufe0f Storm',archColor:'var(--cyan)',
+     bar:'Weather Sniper \u2014 Live',
+     body:`<div class="sc-stat-row">
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--green)">+$41.20</div><div class="sc-stat-label">Today P&L</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--cyan)">73%</div><div class="sc-stat-label">Win Rate</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--yellow)">6</div><div class="sc-stat-label">Trades</div></div>
+     </div>
+     <div class="sc-chart">${[65,40,80,55,90,70,85,60,95,75,50,88].map((h,i)=>`<div class="sc-chart-bar" style="height:${h}%;background:${h>60?'var(--green)':'var(--red)'};animation-delay:${i*0.06}s"></div>`).join('')}</div>
+     <ul class="sc-feed">
+       <li><div class="sc-feed-dot" style="background:var(--green)"></div><span style="color:var(--green)">\u2713 PHX >88\u00b0F</span> — sold @ 87c (+$14.20)<span class="sc-feed-time">2m ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--green)"></div><span style="color:var(--green)">\u2713 NYC <66\u00b0F</span> — sold @ 91c (+$8.60)<span class="sc-feed-time">18m ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--cyan)"></div><span style="color:var(--cyan)">\u{1F50D} Scanning Dallas...</span> — gap detected<span class="sc-feed-time">now</span></li>
+     </ul>`},
+
+    // 2: Social Media Autopilot
+    {title:'Social Media Autopilot',sub:'Posts content, replies to DMs, grows followers — all on autopilot.',arch:'\U0001f47b Phantom',archColor:'var(--purple)',
+     bar:'Social Autopilot \u2014 Active',
+     body:`<div class="sc-stat-row">
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--purple)">2,847</div><div class="sc-stat-label">Followers</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--green)">+340</div><div class="sc-stat-label">This Week</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--cyan)">47</div><div class="sc-stat-label">DMs Handled</div></div>
+     </div>
+     <div style="margin:0.6rem 0">
+       <div style="display:flex;justify-content:space-between;font-size:0.65rem;margin-bottom:0.2rem"><span style="color:var(--text-dim)">Instagram</span><span style="color:var(--green)">+180 this week</span></div>
+       <div class="sc-prog"><div class="sc-prog-fill" style="--w:72%;background:linear-gradient(90deg,var(--purple),var(--pink))"></div></div>
+       <div style="display:flex;justify-content:space-between;font-size:0.65rem;margin:0.5rem 0 0.2rem"><span style="color:var(--text-dim)">TikTok</span><span style="color:var(--green)">+95 this week</span></div>
+       <div class="sc-prog"><div class="sc-prog-fill" style="--w:48%;background:var(--cyan)"></div></div>
+       <div style="display:flex;justify-content:space-between;font-size:0.65rem;margin:0.5rem 0 0.2rem"><span style="color:var(--text-dim)">Threads</span><span style="color:var(--green)">+65 this week</span></div>
+       <div class="sc-prog"><div class="sc-prog-fill" style="--w:35%;background:var(--green)"></div></div>
+     </div>
+     <ul class="sc-feed">
+       <li><div class="sc-feed-dot" style="background:var(--green)"></div>Auto-replied to 12 DMs<span class="sc-feed-time">5m ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--purple)"></div>Scheduled 3 posts for tomorrow<span class="sc-feed-time">1h ago</span></li>
+     </ul>`},
+
+    // 3: Real Estate Deal Finder
+    {title:'Real Estate Deal Finder',sub:'Scrapes off-market properties. Analyzes ROI. Sends you the winners.',arch:'\U0001f52e Oracle',archColor:'var(--green)',
+     bar:'Deal Finder \u2014 Scanning',
+     body:`<div class="sc-stat-row">
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--green)">14</div><div class="sc-stat-label">Deals Found</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--cyan)">3</div><div class="sc-stat-label">High ROI</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--yellow)">$2.1M</div><div class="sc-stat-label">Pipeline</div></div>
+     </div>
+     <ul class="sc-feed">
+       <li><div class="sc-feed-dot" style="background:var(--green)"></div><strong style="color:var(--text)">3516 Astoria Blvd</strong> — ROI: 24% \u{1F525}<span class="sc-feed-time">new</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--green)"></div><strong style="color:var(--text)">142 Pacific St</strong> — ROI: 19%<span class="sc-feed-time">2h ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--yellow)"></div><strong style="color:var(--text)">89 Flatbush Ave</strong> — ROI: 15%<span class="sc-feed-time">5h ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--text-dim)"></div><strong style="color:var(--text-dim)">27 Myrtle Ave</strong> — Below threshold<span class="sc-feed-time">1d ago</span></li>
+     </ul>
+     <div style="font-size:0.6rem;color:var(--text-dim);margin-top:0.4rem">\u{1F50D} Scanning NYC Open Data for new filings...</div>`},
+
+    // 4: Crypto Scanner
+    {title:'Crypto Trading Agent',sub:'Mean reversion + momentum. Paper tests itself. Goes live when ready.',arch:'\u26c8\ufe0f Storm',archColor:'var(--cyan)',
+     bar:'BTC Scanner \u2014 Paper Mode',
+     body:`<div class="sc-stat-row">
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--green)">+$832</div><div class="sc-stat-label">Paper P&L</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--cyan)">62%</div><div class="sc-stat-label">Win Rate</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--yellow)">1.4x</div><div class="sc-stat-label">Profit Factor</div></div>
+     </div>
+     <div class="sc-chart">${[30,45,55,40,70,65,80,60,75,90,85,72].map((h,i)=>`<div class="sc-chart-bar" style="height:${h}%;background:${i>=6?'var(--green)':'var(--cyan)'};animation-delay:${i*0.06}s"></div>`).join('')}</div>
+     <ul class="sc-feed">
+       <li><div class="sc-feed-dot" style="background:var(--green)"></div><span style="color:var(--green)">BUY BTC</span> @ $67,420 \u2014 mean reversion signal<span class="sc-feed-time">4m ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--yellow)"></div><span style="color:var(--yellow)">WATCHING</span> ETH \u2014 z-score 1.6 (threshold: 1.8)<span class="sc-feed-time">12m ago</span></li>
+     </ul>
+     <div style="margin-top:0.5rem;padding:0.4rem 0.6rem;background:rgba(0,230,118,0.05);border-radius:6px;font-size:0.6rem;color:var(--green)">38/50 trades complete \u2014 12 more until live promotion</div>`},
+
+    // 5: Outreach Engine
+    {title:'Outreach Engine',sub:'Cold emails, follow-ups, and lead tracking — on autopilot.',arch:'\U0001f47b Phantom',archColor:'var(--purple)',
+     bar:'Outreach Engine \u2014 Sending',
+     body:`<div class="sc-stat-row">
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--purple)">312</div><div class="sc-stat-label">Sent</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--green)">28%</div><div class="sc-stat-label">Open Rate</div></div>
+       <div class="sc-stat"><div class="sc-stat-val" style="color:var(--cyan)">18</div><div class="sc-stat-label">Replies</div></div>
+     </div>
+     <ul class="sc-feed">
+       <li><div class="sc-feed-dot" style="background:var(--green)"></div>\u{2709}\ufe0f <strong style="color:var(--text)">Sarah K.</strong> replied \u2014 "Yes, let's talk"<span class="sc-feed-time">3m ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--cyan)"></div>\u{1F4E8} Follow-up #2 sent to <strong style="color:var(--text)">12 prospects</strong><span class="sc-feed-time">1h ago</span></li>
+       <li><div class="sc-feed-dot" style="background:var(--yellow)"></div>\u{1F4CA} Batch of 50 personalized emails queued<span class="sc-feed-time">2h ago</span></li>
+     </ul>`},
+
+    // 6: Multi-Agent Empire
+    {title:'Multi-Agent Dashboard',sub:'5 agents. 5 income streams. One dashboard to rule them all.',arch:'\U0001f30c Specter',archColor:'var(--pink)',
+     bar:'Command Center \u2014 All Systems',
+     body:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
+       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.65rem"><span style="color:var(--cyan)">\u26c8\ufe0f Weather</span><div style="color:var(--green);font-weight:700;font-size:0.9rem;margin-top:0.2rem">+$41</div><div style="font-size:0.5rem;color:var(--text-dim)">6 trades today</div></div>
+       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.65rem"><span style="color:var(--orange)">\u{20bf} Crypto</span><div style="color:var(--green);font-weight:700;font-size:0.9rem;margin-top:0.2rem">+$832</div><div style="font-size:0.5rem;color:var(--text-dim)">paper mode</div></div>
+       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.65rem"><span style="color:var(--purple)">\U0001f47b Social</span><div style="color:var(--green);font-weight:700;font-size:0.9rem;margin-top:0.2rem">+340</div><div style="font-size:0.5rem;color:var(--text-dim)">followers/wk</div></div>
+       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.65rem"><span style="color:var(--green)">\U0001f3e0 Deals</span><div style="color:var(--green);font-weight:700;font-size:0.9rem;margin-top:0.2rem">14</div><div style="font-size:0.5rem;color:var(--text-dim)">found this week</div></div>
+     </div>
+     <div style="text-align:center;padding:0.5rem;background:rgba(0,230,118,0.04);border-radius:8px;font-size:0.7rem;color:var(--green);font-weight:600">\u26a1 All 5 agents running \u2014 Total: +$1,247 this week</div>`},
+  ];
+
+  const container=document.getElementById('showcase');
+  const dotsContainer=document.getElementById('showcaseDots');
+  if(!container)return;
+
+  // Build cards
+  builds.forEach((b,i)=>{
+    const card=document.createElement('div');
+    card.className='showcase-card'+(i===0?' active':'');
+    card.innerHTML=`
+      <div class="sc-window">
+        <div class="sc-bar"><span></span><span></span><span></span><span class="sc-bar-title">${b.bar}</span></div>
+        <div class="sc-body">${b.body}</div>
+      </div>
+      <div class="sc-caption">
+        <div class="sc-caption-title">${b.title}</div>
+        <div class="sc-caption-sub">${b.sub}</div>
+        <div class="sc-caption-arch"><span class="sc-badge" style="background:${b.archColor}20;color:${b.archColor}">${b.arch}</span></div>
+      </div>`;
+    container.appendChild(card);
+
+    // Dot
+    const dot=document.createElement('div');
+    dot.className='showcase-dot'+(i===0?' active':'');
+    dot.onclick=()=>goTo(i);
+    dotsContainer.appendChild(dot);
+  });
+
+  let current=0;
+  const cards=container.querySelectorAll('.showcase-card');
+  const dots=dotsContainer.querySelectorAll('.showcase-dot');
+
+  function goTo(idx){
+    if(idx===current)return;
+    const old=current;
+    // Glitch out current card
+    cards[old].classList.remove('active');
+    cards[old].classList.add('glitch-out');
+    dots[old].classList.remove('active');
+    // Brief screen flash on transition
+    const flash=document.createElement('div');
+    flash.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,212,255,0.06);pointer-events:none;z-index:10;mix-blend-mode:screen';
+    container.appendChild(flash);
+    setTimeout(()=>flash.remove(),150);
+    // Glitch in new card
+    setTimeout(()=>{
+      cards[old].classList.remove('glitch-out');
+      cards[old].classList.add('prev');
+      current=idx;
+      cards[current].classList.remove('prev');
+      cards[current].classList.add('glitch-in');
+      dots[current].classList.add('active');
+      setTimeout(()=>{cards[current].classList.remove('glitch-in');cards[current].classList.add('active')},500);
+    },200);
+  }
+
+  // Auto-cycle
+  setInterval(()=>{
+    const next=(current+1)%builds.length;
+    goTo(next);
+  },5000);
+})();
+
+// ═══ LIVE SOCIAL PROOF FEED ═══
+(function(){
+  const names=['Marcus J.','Keisha W.','Tyler R.','Priya M.','Jordan L.','Alex K.','Samira D.','Chris P.','Nadia B.','Deon S.','Luna F.','Jayden T.','Aria C.','Zoe H.','Kai N.','Imani W.','Davi R.','Aaliyah M.','Mateo C.','Jade T.','Aiden K.','Nia S.','Omar F.','Lena V.','Bryce L.'];
+  const archs=['Storm ⛈️','Phantom 👻','Oracle 🔮','Architect 🏗️','Specter 🌌'];
+  const actions=[
+    (n,a)=>`<strong>${n}</strong> just found out they're a <strong>${a}</strong>`,
+    (n,a)=>`<strong>${n}</strong> just unlocked their guide`,
+    (n,a)=>`another <strong>${a}</strong> just joined`,
+    (n,a)=>`<strong>${n}</strong> just took the quiz`,
+    (n,a)=>`<strong>${n}</strong> joined the Builder community`,
+  ];
+  const times=['just now','2 min ago','4 min ago','7 min ago','12 min ago'];
+  const feed=document.getElementById('liveFeed');
+  if(!feed)return;
+  let shown=0;
+
+  function showToast(){
+    if(shown>20)return; // Don't spam forever
+    const name=names[Math.floor(Math.random()*names.length)];
+    const arch=archs[Math.floor(Math.random()*archs.length)];
+    const action=actions[Math.floor(Math.random()*actions.length)];
+    const time=times[Math.floor(Math.random()*3)]; // Bias toward recent
+
+    const toast=document.createElement('div');
+    toast.className='feed-toast';
+    toast.innerHTML=`<div class="feed-dot"></div><div class="feed-text">${action(name,arch)}</div><div class="feed-time">${time}</div>`;
+    feed.appendChild(toast);
+    shown++;
+
+    // Remove after animation
+    setTimeout(()=>{if(toast.parentNode)toast.remove()},5200);
+    // Next toast
+    setTimeout(showToast,8000+Math.random()*15000);
+  }
+  // Start after 5s delay
+  setTimeout(showToast,5000);
+})();
+
+// ═══ EXIT INTENT ═══
+(function(){
+  let fired=false;
+  document.addEventListener('mouseleave',function(e){
+    if(e.clientY<0 && !fired){
+      fired=true;
+      // Only show if they haven't started the quiz yet
+      const onLanding=document.getElementById('screenLanding').classList.contains('active');
+      const onGate=document.getElementById('screenGate').classList.contains('active');
+      if(onLanding||onGate){
+        document.getElementById('exitOverlay').classList.add('show');
+      }
+    }
+  });
+})();
+
+// ═══ GATE ═══
+const userData={};
+function handleGate(method){
+  const email=document.getElementById('userEmail').value.trim();
+  const name=document.getElementById('userName').value.trim();
+  if(!email||!email.includes('@')){document.getElementById('userEmail').style.borderColor='var(--red)';return}
+  userData.email=email;userData.name=name;userData.payMethod=method||'free';
+  localStorage.setItem('glitch_user',JSON.stringify(userData));
+
+  // Quiz is FREE — go straight to questions
+  // Payment happens at the guide unlock ($5) or subscription tiers
+  showScreen('screenQuiz');
+  initQuiz();
+}
+if(localStorage.getItem('glitch_unlocked')){
+  // Already paid — skip gate
+}
+
+// ═══ QUIZ ENGINE ═══
+const questions=[
+  {id:'pain',q:'be honest — what\'s actually bothering you rn?',hint:'no judgment. pick what hits.',type:'single',opts:[
+    {icon:'\u{1F4B8}',text:'I\'m broke or close to it',sub:'rent\'s due and savings are a myth',val:'income'},
+    {icon:'\u{23F0}',text:'I have no free time',sub:'always working, never living',val:'time'},
+    {icon:'\u{1F9E9}',text:'I feel stuck',sub:'same routine every day, nothing changes',val:'stuck'},
+    {icon:'\u{1F4C9}',text:'I keep losing money',sub:'tried investing, trading, whatever — it\'s not working',val:'investing'},
+    {icon:'\u{1F916}',text:'everyone\'s doing AI stuff except me',sub:'I see it everywhere and idk where to start',val:'fomo'},
+  ]},
+  {id:'income',q:'how are you making money right now?',hint:'no wrong answers. this shapes everything.',type:'single',opts:[
+    {icon:'\u{1F4BC}',text:'9-to-5 / hourly job',sub:'it pays the bills but that\'s about it',val:'employed'},
+    {icon:'\u{1F3E0}',text:'real estate / property',sub:'rentals, flips, or trying to get into it',val:'realestate'},
+    {icon:'\u{1F4C8}',text:'trading / investing',sub:'stocks, crypto, whatever moves',val:'trading'},
+    {icon:'\u{1F6E0}',text:'freelance / side hustle',sub:'gig work, selling services, doing my thing',val:'freelance'},
+    {icon:'\u{1F3AD}',text:'content / social media',sub:'creator, brand deals, building an audience',val:'content'},
+    {icon:'\u{274C}',text:'nothing rn',sub:'in between things, figuring it out',val:'searching'},
+  ]},
+  {id:'goal',q:'how much do you actually want to make per month?',hint:'be real with yourself. this determines your path.',type:'single',opts:[
+    {icon:'\u{1F4B5}',text:'$500 - $1K/mo',sub:'enough to breathe a little',val:'starter'},
+    {icon:'\u{1F4B0}',text:'$1K - $5K/mo',sub:'quit my job type money',val:'growth'},
+    {icon:'\u{1F680}',text:'$5K - $20K/mo',sub:'life is different at this level',val:'scale'},
+    {icon:'\u{1F451}',text:'$20K+/mo',sub:'I\'m not here to play small',val:'empire'},
+  ]},
+  {id:'time',q:'how many hours a week can you actually put in?',hint:'be honest. setup takes work — then it runs itself.',type:'slider',min:1,max:40,default:10,labels:['1 hr','10 hrs','20 hrs','40 hrs']},
+  {id:'tech',q:'how good are you with tech?',hint:'no shame. we match the difficulty to YOU.',type:'slider',min:1,max:5,default:3,labels:['I can barely use Excel','','I can Google my way through','','I write code']},
+  {id:'interest',q:'what sounds fun to you?',hint:'pick up to 3. these become your AI agents.',type:'multi',max:3,opts:[
+    {icon:'\u{26C8}',text:'Weather trading',val:'weather'},
+    {icon:'\u{20BF}',text:'Crypto / DeFi',val:'crypto'},
+    {icon:'\u{1F3E0}',text:'Real estate deals',val:'realestate'},
+    {icon:'\u{1F4F1}',text:'Social media automation',val:'social'},
+    {icon:'\u{1F4E7}',text:'Cold outreach / lead gen',val:'outreach'},
+    {icon:'\u{1F4CA}',text:'Data scraping',val:'data'},
+    {icon:'\u{1F3A8}',text:'Content on autopilot',val:'content'},
+    {icon:'\u{1F6D2}',text:'E-commerce / dropshipping',val:'ecom'},
+  ]},
+  {id:'automate',q:'if AI could handle one thing in your life tomorrow, what would it be?',hint:'pick the one that would free up the most time or money.',type:'single',opts:[
+    {icon:'\u{1F4B1}',text:'make me money while I sleep',sub:'trading, arbitrage, passive income streams',val:'passive_income'},
+    {icon:'\u{1F4F2}',text:'run my social media for me',sub:'posting, replying, growing my audience',val:'social_auto'},
+    {icon:'\u{1F4E9}',text:'find me clients or customers',sub:'outreach, lead gen, closing deals',val:'lead_gen'},
+    {icon:'\u{1F4CA}',text:'find me deals and opportunities',sub:'real estate, flips, underpriced assets',val:'deal_finder'},
+    {icon:'\u{1F6D2}',text:'run my store or product sales',sub:'inventory, fulfillment, customer service',val:'ecom_auto'},
+    {icon:'\u{1F9E0}',text:'think for me and make decisions',sub:'research, analysis, strategy',val:'decision_engine'},
+  ]},
+  {id:'dream',q:'picture this — if someone built you a custom AI system, what would it do?',hint:'dream big. this shapes what we can build for you.',type:'multi',max:3,opts:[
+    {icon:'\u{1F4B0}',text:'auto-trade and grow my money',sub:'set it, forget it, check profits',val:'auto_trade'},
+    {icon:'\u{1F4F1}',text:'grow my brand to 100K followers',sub:'content, engagement, viral loops',val:'brand_growth'},
+    {icon:'\u{1F3E0}',text:'find and analyze real estate deals',sub:'before anyone else sees them',val:'deal_scout'},
+    {icon:'\u{1F4BC}',text:'replace my job income completely',sub:'multiple AI income streams',val:'job_replace'},
+    {icon:'\u{1F680}',text:'build a business that runs itself',sub:'sales, fulfillment, support — all AI',val:'auto_biz'},
+    {icon:'\u{1F465}',text:'manage a team of AI agents for me',sub:'one dashboard, multiple agents working 24/7',val:'agent_army'},
+  ]},
+  {id:'platforms',q:'where do you spend your time online?',hint:'tap all that apply. we\'ll find money on YOUR platforms.',type:'multi',max:10,opts:[
+    {icon:'\u{1F4F7}',text:'Instagram',val:'instagram'},
+    {icon:'\u{1F426}',text:'X (Twitter)',val:'twitter'},
+    {icon:'\u{1F3B5}',text:'TikTok',val:'tiktok'},
+    {icon:'\u{1F4DD}',text:'Threads',val:'threads'},
+    {icon:'\u{1F4D8}',text:'Facebook',val:'facebook'},
+    {icon:'\u{1F4BC}',text:'LinkedIn',val:'linkedin'},
+    {icon:'\u{25B6}',text:'YouTube',val:'youtube'},
+    {icon:'\u{1F4AC}',text:'Discord',val:'discord'},
+    {icon:'\u{2709}',text:'Email / Newsletter',val:'email'},
+  ]},
+  {id:'followers',q:'how big is your audience rn?',hint:'across everything. ballpark is fine.',type:'single',opts:[
+    {icon:'\u{1F331}',text:'0 - 500',sub:'just getting started, no stress',val:'micro'},
+    {icon:'\u{1F33F}',text:'500 - 5K',sub:'small but growing',val:'small'},
+    {icon:'\u{1F333}',text:'5K - 50K',sub:'people actually listen to me',val:'medium'},
+    {icon:'\u{1F30D}',text:'50K+',sub:'I have reach',val:'large'},
+  ]},
+  {id:'invest',q:'what can you invest to get this going?',hint:'for tools, APIs, and your first trades. be real.',type:'single',opts:[
+    {icon:'\u{1FA99}',text:'Under $100',sub:'I\'m starting from zero and that\'s okay',val:'minimal'},
+    {icon:'\u{1F4B5}',text:'$100 - $500',sub:'I can afford to invest in myself',val:'moderate'},
+    {icon:'\u{1F4B0}',text:'$500 - $2,000',sub:'I\'m serious about this',val:'serious'},
+    {icon:'\u{1F48E}',text:'$2,000+',sub:'let\'s go',val:'premium'},
+  ]},
+  {id:'why',q:'last one — why are you really here?',hint:'no wrong answer. this is between you and your future self.',type:'single',opts:[
+    {icon:'\u{1F525}',text:'I want out',sub:'financial freedom, no more depending on anyone',val:'freedom'},
+    {icon:'\u{1F9E0}',text:'I want the cheat code',sub:'learn AI before it\'s too late',val:'learn'},
+    {icon:'\u{1F3D7}',text:'I want to build something real',sub:'not a hustle, a system that lasts',val:'build'},
+    {icon:'\u{1F31F}',text:'I need to prove it to myself',sub:'I know I can do this, I just need the right path',val:'prove'},
+  ]},
+];
+
+let qIdx=0;
+const answers={};
+
+function initQuiz(){
+  qIdx=0;
+  renderProgress();
+  renderQuestion();
+}
+
+function renderProgress(){
+  const c=document.getElementById('quizProgress');
+  c.innerHTML='';
+  questions.forEach((_,i)=>{
+    const b=document.createElement('div');
+    b.className='quiz-bar'+(i<qIdx?' done':'')+(i===qIdx?' active':'');
+    c.appendChild(b);
+  });
+}
+
+function getQuizInsight(){
+  // After Q3 (index 3) — they've answered pain, income, goal
+  if(qIdx===3 && answers.pain && answers.income){
+    const leans=[];
+    if(answers.income==='trading')leans.push('Storm');
+    if(answers.income==='realestate')leans.push('Oracle');
+    if(answers.income==='employed')leans.push('Phantom','Storm');
+    if(answers.income==='freelance')leans.push('Architect');
+    if(answers.income==='content')leans.push('Phantom');
+    if(answers.income==='searching')leans.push('Specter');
+    if(answers.goal==='empire')leans.push('Specter');
+    const top=leans.length?leans[0]:'Storm';
+    const second=leans.length>1?leans[1]:'Phantom';
+    return `interesting... you're giving <strong>${top}</strong> or <strong>${second}</strong> energy. keep going, we're narrowing it down.`;
+  }
+  // After Q6 (index 6) — they've picked interests + what to automate
+  if(qIdx===6 && answers.interest){
+    const pcts=['23%','12%','8%','15%','18%'];
+    const pct=pcts[Math.floor(Math.random()*pcts.length)];
+    return `okay this is rare — only <strong>${pct}</strong> of people pick that combo. your archetype is forming and it\'s not basic.`;
+  }
+  // After Q8 (index 8) — they told us their dream build
+  if(qIdx===8 && answers.dream){
+    const dreamCount=answers.dream.length;
+    return `noted — ${dreamCount>1?dreamCount+' dream builds':'your dream build'}. we\'re already mapping out what your system looks like. keep going.`;
+  }
+  // After Q11 (index 11) — last question
+  if(qIdx===11){
+    return `your archetype is <strong>locked in</strong>. this last one shapes your whole build. choose wisely.`;
+  }
+  return null;
+}
+
+function renderQuestion(){
+  const q=questions[qIdx];
+  const c=document.getElementById('quizContainer');
+  renderProgress();
+
+  const insight=getQuizInsight();
+  let html='';
+  if(insight){
+    html+=`<div class="quiz-insight"><div class="quiz-insight-label">System Analysis</div><div class="quiz-insight-text">${insight}</div></div>`;
+  }
+
+  html+=`<div class="quiz-q">
+    <div class="quiz-num">Question ${qIdx+1} of ${questions.length}</div>
+    <div class="quiz-question rgb-split">${q.q}</div>
+    <div class="quiz-hint">${q.hint}</div>`;
+
+  if(q.type==='single'){
+    html+=`<div class="quiz-options">`;
+    q.opts.forEach((o,i)=>{
+      const sel=answers[q.id]===o.val?' selected':'';
+      html+=`<div class="quiz-opt${sel}" onclick="selectQuizOpt('${q.id}','${o.val}',this,'single')">
+        <div class="quiz-opt-icon">${o.icon}</div>
+        <div><div class="quiz-opt-text">${o.text}</div>${o.sub?`<div class="quiz-opt-sub">${o.sub}</div>`:''}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  } else if(q.type==='multi'){
+    html+=`<div class="quiz-options quiz-multi">`;
+    const selected=answers[q.id]||[];
+    q.opts.forEach(o=>{
+      const sel=selected.includes(o.val)?' selected':'';
+      html+=`<div class="quiz-opt${sel}" onclick="selectQuizOpt('${q.id}','${o.val}',this,'multi')">
+        <div class="quiz-opt-icon">${o.icon}</div>
+        <div><div class="quiz-opt-text">${o.text}</div></div>
+      </div>`;
+    });
+    html+=`</div>`;
+  } else if(q.type==='slider'){
+    const val=answers[q.id]||q.default;
+    html+=`<input type="range" class="quiz-slider" min="${q.min}" max="${q.max}" value="${val}" oninput="sliderChange('${q.id}',this.value)">
+    <div class="slider-labels">${q.labels.map(l=>`<span>${l}</span>`).join('')}</div>
+    <div class="slider-value" id="sliderVal_${q.id}">${val}</div>`;
+    answers[q.id]=val;
+  }
+
+  const hasAnswer=answers[q.id]!==undefined&&answers[q.id]!==null&&(Array.isArray(answers[q.id])?answers[q.id].length>0:true);
+
+  html+=`<div class="quiz-nav">
+    ${qIdx>0?'<button class="quiz-back" onclick="prevQ()">&larr; Back</button>':'<div></div>'}
+    <button class="quiz-next" ${hasAnswer?'':'disabled'} onclick="nextQ()">${qIdx===questions.length-1?'See My Glitch &rarr;':'Next &rarr;'}</button>
+  </div></div>`;
+
+  c.innerHTML=html;
+}
+
+function selectQuizOpt(id,val,el,type){
+  if(type==='single'){
+    answers[id]=val;
+    el.parentElement.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected');
+    // Auto-advance after short delay
+    setTimeout(()=>{
+      document.querySelector('.quiz-next').disabled=false;
+      nextQ();
+    },300);
+  } else {
+    if(!answers[id])answers[id]=[];
+    const q=questions[qIdx];
+    if(answers[id].includes(val)){
+      answers[id]=answers[id].filter(v=>v!==val);
+      el.classList.remove('selected');
+    } else if(answers[id].length<q.max){
+      answers[id].push(val);
+      el.classList.add('selected');
+    }
+    document.querySelector('.quiz-next').disabled=answers[id].length===0;
+  }
+}
+
+function sliderChange(id,val){
+  answers[id]=parseInt(val);
+  document.getElementById('sliderVal_'+id).textContent=val;
+  document.querySelector('.quiz-next').disabled=false;
+}
+
+function nextQ(){
+  if(qIdx<questions.length-1){qIdx++;renderQuestion()}
+  else{showScreen('screenReveal');doReveal()}
+}
+function prevQ(){if(qIdx>0){qIdx--;renderQuestion()}}
+
+// ═══ ARCHETYPES ═══
+const archetypes={
+  storm:{name:'Glitch Storm',icon:'\u{26C8}',color:'var(--cyan)',tagline:'The market whisperer. You see patterns where others see chaos.',
+    desc:'You\'re wired to find edges in data — weather patterns, price movements, prediction markets. Your Glitch is turning information asymmetry into automated income. While others react, your agent is already positioned.',
+    builds:['Weather contract trading bot','Crypto bracket scanner','Prediction market arbitrage','Multi-market signal aggregator'],
+    badge:'bg:rgba(0,212,255,0.1);color:var(--cyan)'},
+  phantom:{name:'Glitch Phantom',icon:'\u{1F47B}',color:'var(--purple)',tagline:'The invisible operator. Your systems run so you don\'t have to.',
+    desc:'You have a business or hustle that\'s eating your time alive. Your Glitch is building invisible agents that handle the grunt work — outreach, follow-ups, scheduling, content — while you focus on what actually moves the needle.',
+    builds:['Automated outreach engine','Content scheduling & posting bot','Customer follow-up sequences','Operations management agent'],
+    badge:'bg:rgba(168,85,247,0.1);color:var(--purple)'},
+  oracle:{name:'Glitch Oracle',icon:'\u{1F52E}',color:'var(--green)',tagline:'The deal finder. You see opportunity in every property, every number.',
+    desc:'You think in terms of ROI, ARV, and cash flow. Your Glitch is an AI that scrapes deals, analyzes properties, manages tenants, and finds off-market opportunities before anyone else sees them.',
+    builds:['Deal analysis & lead scraper','Property management ops bot','Investor reporting dashboard','Permit & market intelligence agent'],
+    badge:'bg:rgba(0,230,118,0.1);color:var(--green)'},
+  architect:{name:'Glitch Architect',icon:'\u{1F3D7}',color:'var(--orange)',tagline:'The builder. You don\'t just use systems — you create them for others.',
+    desc:'You\'re technical enough to build and curious enough to push boundaries. Your Glitch is becoming the person who builds AI systems for OTHER people — turning this skill into a service, an agency, or a product.',
+    builds:['Custom agent development framework','Client dashboard builder','White-label bot templates','AI consulting practice toolkit'],
+    badge:'bg:rgba(249,115,22,0.1);color:var(--orange)'},
+  specter:{name:'Glitch Specter',icon:'\u{1F30C}',color:'var(--pink)',tagline:'The multi-threat. One agent isn\'t enough — you want an empire.',
+    desc:'You don\'t fit in one box. You want trading AND automation AND content AND real estate. Your Glitch is building a network of specialized agents that each handle a different income stream, managed from one dashboard.',
+    builds:['Multi-agent control system','Cross-platform content engine','Diversified income dashboard','Portfolio of automated micro-businesses'],
+    badge:'bg:rgba(236,72,153,0.1);color:var(--pink)'},
+};
+
+function determineArchetype(){
+  let scores={storm:0,phantom:0,oracle:0,architect:0,specter:0};
+
+  // Pain point (weighted — this is their core identity)
+  if(answers.pain==='investing'){scores.storm+=4}
+  if(answers.pain==='time'){scores.phantom+=4}
+  if(answers.pain==='income'){scores.phantom+=2;scores.specter+=2;scores.storm+=1}
+  if(answers.pain==='stuck'){scores.specter+=3;scores.phantom+=1}
+  if(answers.pain==='fomo'){scores.architect+=3;scores.phantom+=1}
+
+  // Income source (heavy signal — what they already do)
+  if(answers.income==='trading')scores.storm+=4;
+  if(answers.income==='realestate')scores.oracle+=4;
+  if(answers.income==='freelance'){scores.architect+=3;scores.phantom+=1}
+  if(answers.income==='content'){scores.phantom+=3;scores.specter+=1}
+  if(answers.income==='employed'){scores.phantom+=3;scores.storm+=1}
+  if(answers.income==='searching'){scores.specter+=3;scores.phantom+=1}
+
+  // Income goal
+  if(answers.goal==='empire')scores.specter+=4;
+  if(answers.goal==='scale'){scores.architect+=2;scores.specter+=1}
+  if(answers.goal==='growth'){scores.phantom+=2;scores.storm+=1}
+  if(answers.goal==='starter'){scores.phantom+=2}
+
+  // Tech level (shapes what they can handle)
+  const tech=answers.tech||3;
+  if(tech>=4){scores.architect+=3}
+  if(tech===3){scores.storm+=1;scores.phantom+=1}
+  if(tech<=2){scores.phantom+=3}
+
+  // Interests (pick 3 — strongest signal for lane)
+  const interests=answers.interest||[];
+  if(interests.includes('weather'))scores.storm+=4;
+  if(interests.includes('crypto'))scores.storm+=3;
+  if(interests.includes('realestate'))scores.oracle+=4;
+  if(interests.includes('social')){scores.phantom+=3;scores.specter+=1}
+  if(interests.includes('outreach'))scores.phantom+=3;
+  if(interests.includes('data'))scores.architect+=3;
+  if(interests.includes('content')){scores.phantom+=2;scores.specter+=1}
+  if(interests.includes('ecom'))scores.specter+=3;
+  if(interests.length>=3)scores.specter+=1;
+
+  // Budget
+  if(answers.invest==='premium'){scores.architect+=2;scores.specter+=1}
+  if(answers.invest==='serious')scores.architect+=1;
+  if(answers.invest==='moderate')scores.storm+=1;
+  if(answers.invest==='minimal'){scores.phantom+=2}
+
+  // Why (the closer — seals the archetype)
+  if(answers.why==='freedom'){scores.phantom+=2;scores.storm+=1}
+  if(answers.why==='learn'){scores.architect+=3}
+  if(answers.why==='build'){scores.architect+=2;scores.specter+=1}
+  if(answers.why==='prove'){scores.specter+=2;scores.phantom+=1}
+
+  // Find winner
+  let best='storm',max=0;
+  for(const[k,v]of Object.entries(scores)){if(v>max){max=v;best=k}}
+  return best;
+}
+
+function doReveal(){
+  const type=determineArchetype();
+  userData.archetype=type;
+  localStorage.setItem('glitch_user',JSON.stringify(userData));
+  localStorage.setItem('glitch_unlocked','true');
+
+  const a=archetypes[type];
+  setTimeout(()=>{
+    document.getElementById('revealLoading').style.display='none';
+    const card=document.getElementById('revealCard');
+    card.style.display='block';
+    // Generate personalized stats
+    const matchPct=Math.floor(Math.random()*8)+91; // 91-98%
+    const rarityPcts={storm:'18%',phantom:'24%',oracle:'14%',architect:'11%',specter:'9%'};
+    const rarity=rarityPcts[type]||'15%';
+    const edgeLevel=answers.tech>=4?'ELITE':answers.tech>=3?'HIGH':'STRONG';
+
+    card.innerHTML=`
+      <div class="reveal-archetype-icon">${a.icon}</div>
+      <div class="reveal-youare">Your Glitch is</div>
+      <div class="reveal-name rgb-split" style="color:${a.color}" data-text="${a.name}">${a.name}</div>
+      <div class="reveal-tagline">"${a.tagline}"</div>
+
+      <div style="display:flex;justify-content:center;gap:1.5rem;margin:1rem 0 1.5rem;flex-wrap:wrap">
+        <div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:${a.color}">${matchPct}%</div><div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Match</div></div>
+        <div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:${a.color}">${rarity}</div><div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">of quiz takers</div></div>
+        <div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:${a.color}">${edgeLevel}</div><div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Edge potential</div></div>
+      </div>
+
+      <div class="reveal-desc">${a.desc}</div>
+      <div class="reveal-builds">
+        <div class="reveal-builds-title">What you'll build:</div>
+        ${a.builds.map(b=>`<div class="reveal-build-item">${b}</div>`).join('')}
+      </div>
+      <div class="reveal-community">
+        <div class="reveal-community-title">\u{1F4AC} You're in the Glitch Network</div>
+        <div class="reveal-community-desc">Your community access is active. Join ${type==='storm'?'#storm-traders':type==='phantom'?'#phantom-ops':type==='oracle'?'#oracle-deals':type==='architect'?'#architect-builds':'#specter-empire'} in our Discord to connect with other ${a.name.split(' ')[1]}s.</div>
+      </div>
+      <button class="cta" style="width:100%" onclick="startGuide('${type}')">Start My ${a.name.split(' ')[1]} Build Guide &rarr;</button>
+      <div style="margin-top:1rem;font-size:0.65rem;color:var(--text-dim)">Screenshot this and share your archetype \u{1F4F8}</div>
+    `;
+  },2500);
+}
+
+// ═══ SYSTEM BUILD TEASER (shows system "building" then freezes behind paywall) ═══
+function runBuildTeaser(type, onComplete){
+  const a=archetypes[type];
+  const interests=answers.interest||[];
+  const selectedModules=interests.map(i=>agentModules[i]).filter(Boolean);
+  const automate=answers.automate||'passive_income';
+  const dreams=answers.dream||[];
+
+  showScreen('screenGuide');
+  document.getElementById('screenGuide').style.alignItems='flex-start';
+
+  const gc=document.getElementById('guideContent');
+  gc.innerHTML=`
+    <div style="max-width:600px;margin:2rem auto;padding:0 1rem">
+      <div style="text-align:center;margin-bottom:2rem">
+        <div style="font-size:0.6rem;color:var(--cyan);text-transform:uppercase;letter-spacing:3px;margin-bottom:0.5rem">system build in progress</div>
+        <div style="font-size:1.3rem;font-weight:800" class="rgb-split">Deploying Your ${a.name.split(' ')[1]} Stack</div>
+      </div>
+
+      <div id="buildSequence" style="position:relative">
+        <!-- Agent deploy lines will be injected here -->
+      </div>
+
+      <div id="buildFreeze" style="display:none">
+        <div style="position:relative;text-align:center;padding:2rem 0">
+          <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,48,80,0.04) 2px,rgba(255,48,80,0.04) 4px);pointer-events:none;z-index:1"></div>
+          <div style="font-size:2rem;margin-bottom:0.5rem;animation:glitchShake 0.15s ease infinite">\u26a0\ufe0f</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--red);margin-bottom:0.3rem;animation:glitchShake 0.2s ease infinite">SYSTEM BUILD PAUSED</div>
+          <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:1.5rem">your agents are ready to deploy. unlock to complete the build.</div>
+          <div id="buildProgress" style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:1rem 0">
+            <div style="width:35%;height:100%;background:linear-gradient(90deg,var(--cyan),var(--red));border-radius:3px;animation:progPulse 1.5s ease infinite"></div>
+          </div>
+          <div style="font-size:0.6rem;color:var(--text-dim)">35% complete — agents configured, awaiting deployment keys</div>
+        </div>
+      </div>
+
+      <div id="buildPaywall" style="display:none"></div>
+    </div>
+  `;
+
+  // Add glitch shake animation
+  if(!document.getElementById('buildTeaserStyles')){
+    const st=document.createElement('style');
+    st.id='buildTeaserStyles';
+    st.textContent=`
+      @keyframes glitchShake{0%{transform:translate(0)}25%{transform:translate(-2px,1px)}50%{transform:translate(1px,-1px)}75%{transform:translate(-1px,0)}100%{transform:translate(0)}}
+      @keyframes progPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+      @keyframes typeIn{from{width:0}to{width:100%}}
+      @keyframes scanDeploy{0%{background-position:0 0}100%{background-position:0 100%}}
+      .build-line{display:flex;align-items:center;gap:0.6rem;padding:0.6rem 0.8rem;margin-bottom:2px;font-size:0.75rem;font-family:'JetBrains Mono',monospace;background:var(--bg2);border-left:3px solid var(--border);opacity:0;transform:translateX(-10px);transition:all 0.4s ease}
+      .build-line.show{opacity:1;transform:translateX(0)}
+      .build-line.success{border-left-color:var(--green)}
+      .build-line.success .bl-status{color:var(--green)}
+      .build-line.active{border-left-color:var(--cyan);background:rgba(0,212,255,0.03)}
+      .build-line.active .bl-status{color:var(--cyan)}
+      .build-line.frozen{border-left-color:var(--red);background:rgba(255,48,80,0.03);animation:glitchShake 0.3s ease infinite}
+      .build-line.frozen .bl-status{color:var(--red)}
+      .bl-icon{font-size:1rem;width:1.5rem;text-align:center;flex-shrink:0}
+      .bl-text{flex:1;color:var(--text)}
+      .bl-sub{font-size:0.6rem;color:var(--text-dim)}
+      .bl-status{font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;flex-shrink:0}
+      .bl-bar{width:60px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;flex-shrink:0}
+      .bl-bar-fill{height:100%;border-radius:2px;transition:width 0.8s ease}
+    `;
+    document.head.appendChild(st);
+  }
+
+  // Build sequence lines
+  const seq=document.getElementById('buildSequence');
+  const lines=[
+    {icon:'\u{1F50D}',text:'Scanning your quiz profile...',sub:'12 answers analyzed',status:'done',delay:300},
+    {icon:a.icon,text:`Archetype locked: ${a.name}`,sub:'pattern match confirmed',status:'done',delay:800},
+    ...selectedModules.map((m,i)=>({
+      icon:m.icon,text:`Configuring ${m.name}...`,sub:m.desc.split('.')[0],status:i<1?'done':'deploy',delay:1300+i*600
+    })),
+    {icon:'\u{1F517}',text:'Connecting APIs + data feeds...',sub:(answers.platforms||[]).length+' platforms detected',status:'deploy',delay:1300+selectedModules.length*600+300},
+    {icon:'\u{1F6E1}',text:'Setting guardrails + risk limits...',sub:'tuned to your budget: '+(answers.invest||'moderate'),status:'deploy',delay:1300+selectedModules.length*600+800},
+    {icon:'\u{1F4CA}',text:'Building your dashboard...',sub:'real-time monitoring',status:'freeze',delay:1300+selectedModules.length*600+1300},
+    {icon:'\u{1F680}',text:'DEPLOYING TO LIVE...',sub:'',status:'freeze',delay:1300+selectedModules.length*600+1800},
+  ];
+
+  lines.forEach((line,i)=>{
+    const el=document.createElement('div');
+    el.className='build-line';
+    el.innerHTML=`
+      <div class="bl-icon">${line.icon}</div>
+      <div style="flex:1">
+        <div class="bl-text">${line.text}</div>
+        ${line.sub?`<div class="bl-sub">${line.sub}</div>`:''}
+      </div>
+      <div class="bl-bar"><div class="bl-bar-fill" style="width:0;background:${line.status==='freeze'?'var(--red)':line.status==='done'?'var(--green)':'var(--cyan)'}"></div></div>
+      <div class="bl-status">${line.status==='done'?'\u2713':'...'}</div>
+    `;
+    seq.appendChild(el);
+
+    setTimeout(()=>{
+      el.classList.add('show');
+      // Animate progress bar
+      const bar=el.querySelector('.bl-bar-fill');
+      if(line.status==='done'){
+        setTimeout(()=>{bar.style.width='100%';el.classList.add('success');el.querySelector('.bl-status').textContent='\u2713 done'},300);
+      } else if(line.status==='deploy'){
+        setTimeout(()=>{bar.style.width='100%';el.classList.add('success');el.querySelector('.bl-status').textContent='\u2713 ready'},600);
+      } else {
+        // Freeze — progress bar goes to ~40% then stops with glitch
+        setTimeout(()=>{bar.style.width='40%'},300);
+        setTimeout(()=>{
+          el.classList.add('frozen');
+          el.querySelector('.bl-status').textContent='\u26a0 LOCKED';
+          bar.style.background='var(--red)';
+        },800);
+      }
+    },line.delay);
+  });
+
+  // After all lines, show the freeze message + paywall
+  const freezeDelay=1300+selectedModules.length*600+2500;
+  setTimeout(()=>{
+    // Screen glitch flash
+    const flash=document.createElement('div');
+    flash.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,48,80,0.08);pointer-events:none;z-index:9997;animation:fadeIn 0.1s ease forwards';
+    document.body.appendChild(flash);
+    setTimeout(()=>flash.remove(),200);
+
+    document.getElementById('buildFreeze').style.display='block';
+  },freezeDelay);
+
+  setTimeout(()=>{
+    document.getElementById('buildPaywall').style.display='block';
+    onComplete();
+  },freezeDelay+800);
+}
+
+// ═══ GUIDE (personalized per archetype) ═══
+function startGuide(type){
+  const a=archetypes[type];
+
+  // Run build teaser first, then show paywall inside it
+  runBuildTeaser(type, function(){
+    const steps=getGuideSteps(type);
+    renderPaywall(type, steps);
+    // Move paywall content into the build teaser container
+    const pw=document.getElementById('guideContent').querySelector('.paywall');
+    if(pw){
+      document.getElementById('buildPaywall').appendChild(pw);
+    }
+  });
+  return;
+
+  // Original guide code below (kept for unlockGuide flow)
+}
+
+function startGuideReal(type){
+  const a=archetypes[type];
+  showScreen('screenGuide');
+  document.getElementById('screenGuide').style.alignItems='flex-start';
+
+  const tier=localStorage.getItem('glitch_tier')||'guide'; // guide, builder, inner_circle
+  const steps=getGuideSteps(type);
+  let current=0;
+  const guideUnlocked=localStorage.getItem('glitch_guide_unlocked')==='true';
+
+  // ── Tier-specific bonus steps ──
+  const interests=answers.interest||[];
+  const selectedModules=interests.map(i=>agentModules[i]).filter(Boolean);
+  const automate=answers.automate||'passive_income';
+  const dreams=answers.dream||[];
+  const channelName=type==='storm'?'#storm-traders':type==='phantom'?'#phantom-ops':type==='oracle'?'#oracle-deals':type==='architect'?'#architect-builds':'#specter-empire';
+
+  // Builder gets extra steps after the base guide
+  if(tier==='builder'||tier==='inner_circle'){
+    // Clone codebase step
+    steps.push({icon:'\u{1F4E6}',title:'Clone the Glitch Codebase',desc:'Your Builder access includes the full codebase. Clone it, deploy it, make it yours.',
+      content:`
+      <div class="card"><div class="card-title">\u{1F4BB} your private repo access</div><div class="card-body">
+        <p>You now have access to the full Glitch agent codebase — the same code that powers our live systems.</p>
+      </div></div>
+      <div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="c"># Clone the Glitch codebase</span>\n<span class="k">git clone https://github.com/glitch-network/agent-stack.git ~/glitch-agent</span>\n<span class="k">cd ~/glitch-agent</span>\n\n<span class="c"># Install dependencies</span>\n<span class="k">npm install</span>\n\n<span class="c"># Copy your environment config</span>\n<span class="k">cp .env.example .env</span>\n<span class="c"># \u2191 Paste all the API keys from previous steps</span></div></div>
+      <div class="alert alert-success"><strong>This is real code.</strong> Not a tutorial. Not a course. The actual agent stack, ready to deploy.</div>`});
+
+    // Dashboard template step
+    steps.push({icon:'\u{1F4CA}',title:'Deploy Your Dashboard',desc:'Monitor all your agents from one screen. Real-time P&L, trades, alerts.',
+      content:`
+      <div class="card"><div class="card-title">\u{1F5A5} your ${a.name.split(' ')[1]} dashboard</div><div class="card-body">
+        <p>Your dashboard template is pre-configured for your agent stack:</p>
+        ${selectedModules.map(m=>`<p>${m.icon} <strong>${m.name}</strong> — live stats, P&L, trade history</p>`).join('')}
+        <p>\u{1F4F1} Mobile-friendly — check from your phone</p>
+      </div></div>
+      <div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="c"># Start your dashboard</span>\n<span class="k">cd ~/glitch-agent/dashboard</span>\n<span class="k">npm run dev</span>\n\n<span class="c"># Open http://localhost:3000</span>\n<span class="c"># \u26A1 Your agents are live on screen</span></div></div>`});
+
+    // Community onboarding step
+    steps.push({icon:'\u{1F4AC}',title:'Join the Builder Community',desc:'You\'re not doing this alone. Hundreds of builders. Your archetype channel. Weekly sessions.',
+      content:`
+      <div class="card"><div class="card-title">\u{1F30D} your community access</div><div class="card-body">
+        <p><strong>Discord:</strong> Join ${channelName} — your archetype-specific channel</p>
+        <p><strong>Weekly builds:</strong> Live sessions every Thursday at 8pm ET</p>
+        <p><strong>Strategy drops:</strong> New strategies posted monthly in #strategy-drops</p>
+        <p><strong>Wins channel:</strong> Post your first profitable trade in #wins</p>
+      </div></div>
+      <div class="alert alert-success">\u{1F4AC} <strong>Pro tip:</strong> Introduce yourself in ${channelName}. The community helps each other debug, optimize, and scale. You\'re not alone.</div>`});
+
+    // Monthly strategy drops step
+    steps.push({icon:'\u{1F4C5}',title:'Monthly Strategy Updates',desc:'Every month you get new strategies, backtested and ready to plug into your stack.',
+      content:`
+      <div class="card"><div class="card-title">\u{1F504} what you get every month</div><div class="card-body">
+        <p>\u{26A1} <strong>New strategies</strong> — backtested, documented, ready to deploy</p>
+        <p>\u{1F4CA} <strong>Market updates</strong> — what\'s working now, what\'s not, where the edge is</p>
+        <p>\u{1F527} <strong>Agent upgrades</strong> — code updates, new API integrations, bug fixes</p>
+        <p>\u{1F3AF} <strong>Case studies</strong> — real results from builders in the network</p>
+      </div></div>
+      <div class="alert alert-warn">Strategies decay. Markets change. That\'s why you\'re a Builder and not just a guide buyer — you get the updates that keep your edge alive.</div>`});
+  }
+
+  // Inner Circle gets even more
+  if(tier==='inner_circle'){
+    const dreamMap={
+      auto_trade:'Custom trading bot tuned to YOUR risk tolerance',
+      brand_growth:'Personalized content + growth engine for your brand',
+      deal_scout:'Deal finder scanning YOUR target markets',
+      job_replace:'Multi-stream income system replacing your salary',
+      auto_biz:'Full autonomous business pipeline',
+      agent_army:'Multi-agent dashboard with custom orchestration',
+    };
+    const dreamFeats=dreams.map(d=>dreamMap[d]).filter(Boolean);
+
+    steps.push({icon:'\u{1F451}',title:'Your Custom Build Plan',desc:'This is what we build FOR you. On calls. Hands-on. Your dream system.',
+      content:`
+      <div class="card"><div class="card-title">\u{1F451} what we\'re building together</div><div class="card-body">
+        <p>Based on your quiz answers, here\'s your custom build plan:</p>
+        ${dreamFeats.map(d=>`<p>\u{2705} <strong>${d}</strong></p>`).join('')}
+        ${dreamFeats.length===0?'<p>\u{2705} <strong>Custom AI system built for your specific goals</strong></p>':''}
+      </div></div>
+      <div class="card"><div class="card-title">\u{1F4DE} your 1-on-1 schedule</div><div class="card-body">
+        <p><strong>Week 1:</strong> Kickoff call — review your quiz profile, plan your custom build</p>
+        <p><strong>Week 2:</strong> Build session — we code your custom agents together live</p>
+        <p><strong>Week 3:</strong> Optimization — review paper trading results, tune parameters</p>
+        <p><strong>Week 4:</strong> Go live — deploy to production, set alerts, launch</p>
+        <p style="margin-top:0.5rem;color:var(--text-dim);font-size:0.8rem">Then: weekly strategy calls + unlimited text access to the founder</p>
+      </div></div>
+      <div class="alert alert-success"><strong>You don\'t build this alone.</strong> We build it WITH you, on calls, sharing screens. Your system, our expertise. That\'s the Inner Circle.</div>`});
+
+    steps.push({icon:'\u{1F4F1}',title:'Direct Founder Access',desc:'Text anytime. No tickets. No support queue. Just answers.',
+      content:`
+      <div class="card"><div class="card-title">\u{1F4AC} how it works</div><div class="card-body">
+        <p><strong>Telegram:</strong> Direct chat with the founder — text anytime, get answers fast</p>
+        <p><strong>Screen shares:</strong> Jump on a call whenever you\'re stuck</p>
+        <p><strong>Custom code:</strong> Need a feature? Ask and it gets built into your stack</p>
+        <p><strong>Strategy:</strong> Real-time market reads, position reviews, portfolio advice</p>
+      </div></div>
+      <div class="alert alert-warn">Inner Circle is limited to 10 members for a reason. This level of access doesn\'t scale. When it\'s full, it\'s full.</div>`});
+  }
+
+  function renderGuideStep(){
+    const s=steps[current];
+    const total=steps.length;
+
+    // After step 1 (blueprint), show paywall if not unlocked
+    if(current===1 && !guideUnlocked && !localStorage.getItem('glitch_guide_unlocked')){
+      renderPaywall(type,steps);
+      return;
+    }
+
+    // Tier badge for Builder/Inner Circle steps
+    const baseStepCount=getGuideSteps(type).length;
+    const isBonusStep=current>=baseStepCount;
+    const tierBadge=isBonusStep?(tier==='inner_circle'?'<span style="display:inline-block;padding:0.15rem 0.6rem;background:rgba(249,115,22,0.1);color:var(--orange);border-radius:4px;font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem">\u{1F451} Inner Circle</span>':tier==='builder'?'<span style="display:inline-block;padding:0.15rem 0.6rem;background:rgba(0,212,255,0.1);color:var(--cyan);border-radius:4px;font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem">\u26a1 Builder</span>':''):'';
+
+    document.getElementById('guideContent').innerHTML=`
+      <div class="guide-header">
+        <div class="guide-badge" style="${a.badge}">${a.name}</div>
+        <div class="guide-title rgb-split">${a.name.split(' ')[1]} Build Guide</div>
+        ${tier!=='guide'?`<div style="font-size:0.6rem;color:${tier==='inner_circle'?'var(--orange)':'var(--cyan)'};text-transform:uppercase;letter-spacing:2px;margin-top:0.3rem">${tier==='inner_circle'?'\u{1F451} Inner Circle':'⚡ Builder'} Access</div>`:''}
+      </div>
+      <div class="guide-steps">${steps.map((_,i)=>`<div class="guide-step-dot ${i<current?'done':''} ${i===current?'active':''}"></div>`).join('')}</div>
+      <div class="step-vis"><div class="step-vis-bg sv${(current%3)+1}"></div><div class="orb o1"></div><div class="orb o2"></div><div class="step-vis-icon">${s.icon}</div></div>
+      ${tierBadge}
+      <div class="guide-step-num">Step ${current+1} of ${total}</div>
+      <div class="guide-step-title">${s.title}</div>
+      <div class="guide-step-desc">${s.desc}</div>
+      ${s.content}
+      <div class="guide-nav">
+        ${current>0?`<button class="quiz-back" onclick="guideNav(-1)">&larr; Back</button>`:'<div></div>'}
+        ${current<total-1?`<button class="quiz-next" onclick="guideNav(1)">Next &rarr;</button>`:`<button class="quiz-next" onclick="showFinalOffer()">You\'re Live \u{1F680}</button>`}
+      </div>
+    `;
+    scrollTo({top:0,behavior:'smooth'});
+  }
+
+  window.guideNav=function(dir){current+=dir;renderGuideStep()};
+  window.showFinalOffer=function(){renderFinalOffer(type)};
+  window.unlockGuide=function(tier){
+    localStorage.setItem('glitch_guide_unlocked','true');
+    localStorage.setItem('glitch_tier',tier||'guide');
+    const t=tier||'guide';
+    // Run initiation sequence, THEN show guide
+    runInitiation(t, type, function(){
+      current=1;
+      document.getElementById('guideContent')&&startGuideReal(type);
+    });
+  };
+  renderGuideStep();
+}
+
+function renderPaywall(type,steps){
+  const a=archetypes[type];
+  const interests=answers.interest||[];
+  const selectedModules=interests.map(i=>agentModules[i]).filter(Boolean);
+  const automate=answers.automate||'passive_income';
+  const dreams=answers.dream||[];
+
+  // Map quiz answers → personalized bonus descriptions
+  const autoMap={
+    passive_income:'Passive Income Agent Templates',
+    social_auto:'Social Media Autopilot Engine',
+    lead_gen:'Lead Gen + Outreach Bot Pack',
+    deal_finder:'Deal Scanner + Alert System',
+    ecom_auto:'E-Commerce Automation Stack',
+    decision_engine:'AI Decision + Research Agents',
+  };
+  const dreamMap={
+    auto_trade:'Custom trading bot tuned to YOUR risk level',
+    brand_growth:'Done-for-you content + growth engine',
+    deal_scout:'Custom deal finder for YOUR markets',
+    job_replace:'Multi-stream income system for YOUR salary',
+    auto_biz:'Full autonomous business pipeline',
+    agent_army:'Custom multi-agent command dashboard',
+  };
+  const bonusName=autoMap[automate]||autoMap.passive_income;
+  const dreamFeats=dreams.map(d=>dreamMap[d]).filter(Boolean);
+  const topDream=dreamFeats[0]||'Custom AI system built for your goals';
+
+  // Inject Rubicon-style CSS if not already present
+  if(!document.getElementById('rubiconStyles')){
+    const st=document.createElement('style');
+    st.id='rubiconStyles';
+    st.textContent=`
+      @keyframes cardGlow{0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.15),0 0 60px rgba(0,212,255,0.05)}50%{box-shadow:0 0 30px rgba(0,212,255,0.25),0 0 80px rgba(0,212,255,0.1)}}
+      @keyframes borderShift{0%{border-color:var(--cyan)}33%{border-color:var(--purple)}66%{border-color:var(--cyan)}100%{border-color:var(--cyan)}}
+      @keyframes nudgeShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-4px)}30%{transform:translateX(4px)}45%{transform:translateX(-3px)}60%{transform:translateX(3px)}75%{transform:translateX(-1px)}90%{transform:translateX(1px)}}
+      @keyframes ctaShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+      .pw-plan{cursor:pointer;transition:all 0.3s ease;border:2px solid var(--border);border-radius:16px;padding:1.5rem 1rem;text-align:center;position:relative}
+      .pw-plan:hover{border-color:rgba(0,212,255,0.3)}
+      .pw-plan.selected{border-color:var(--cyan);background:rgba(0,212,255,0.03)}
+      .pw-plan-monthly{opacity:0.7}
+      .pw-plan-yearly{transform:scale(1.06);z-index:2;animation:cardGlow 3s ease-in-out infinite,borderShift 6s ease infinite;border-color:var(--cyan)}
+      .pw-plan-quarterly{opacity:0.9}
+      .pw-bonus{display:flex;align-items:center;gap:0.4rem;font-size:0.65rem;padding:0.3rem 0}
+      .pw-bonus-yes{color:var(--green)}.pw-bonus-yes::before{content:'\\2713';font-weight:700;color:var(--green)}
+      .pw-bonus-no{color:var(--text-dim);text-decoration:line-through;opacity:0.5}.pw-bonus-no::before{content:'\\2717';font-weight:700;color:var(--red)}
+      .pw-nudge{background:rgba(255,48,80,0.06);border:1px solid rgba(255,48,80,0.2);border-radius:10px;padding:0.8rem 1rem;margin-top:1rem;font-size:0.7rem;color:var(--red);line-height:1.6;animation:nudgeShake 0.5s ease;display:none}
+      .pw-nudge.show{display:block}
+      .pw-nudge a{color:var(--cyan);font-weight:700;cursor:pointer;text-decoration:underline}
+      .pw-confirm{background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:0.8rem 1rem;margin-top:1rem;font-size:0.7rem;color:var(--green);line-height:1.6;display:none}
+      .pw-confirm.show{display:block}
+      .pw-deploy-btn{width:100%;padding:1rem;font-size:1rem;font-weight:800;border:none;border-radius:12px;cursor:pointer;font-family:inherit;color:#000;background:linear-gradient(135deg,var(--cyan),var(--purple));background-size:200% auto;animation:ctaShimmer 3s linear infinite;transition:all 0.3s;position:relative;overflow:hidden;margin-top:1rem}
+      .pw-deploy-btn:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(0,212,255,0.3)}
+      .pw-deploy-btn::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent 30%,rgba(255,255,255,0.1) 50%,transparent 70%);animation:shine 3s ease-in-out infinite}
+      .pw-save-badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:4px;font-size:0.5rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-top:0.3rem}
+    `;
+    document.head.appendChild(st);
+  }
+
+  window._pwSelectedPlan='yearly'; // Default to yearly (best value)
+
+  window.selectPlan=function(plan){window._pwSelectedPlan=plan;renderPricing()};
+
+  function renderPricing(){
+    const selectedPlan=window._pwSelectedPlan;
+    const nudgeMonthly=`<div class="pw-nudge ${selectedPlan==='monthly'?'show':''}" id="nudgeMonthly">\u26a0\ufe0f you\'re paying <strong>$67/mo</strong> — that\'s <strong>$804/year</strong>. switch to Yearly and pay just <strong>$19/mo ($197/year)</strong>. you\'d save <strong>$607</strong> and unlock all 3 bonuses. <a onclick="selectPlan(\'yearly\')">switch to Yearly \u2192</a></div>`;
+    const nudgeQuarterly=`<div class="pw-nudge ${selectedPlan==='quarterly'?'show':''}" id="nudgeQuarterly">\u26a0\ufe0f you\'re 1 bonus away from the full package. upgrade to Yearly (<strong>$19/mo</strong>) to also get the <strong>Founder Access Programme</strong> (worth $997) — and save even more. <a onclick="selectPlan(\'yearly\')">upgrade to Yearly \u2192</a></div>`;
+    const confirmYearly=`<div class="pw-confirm ${selectedPlan==='yearly'?'show':''}" id="confirmYearly">\u2705 <strong>you\'ve got the best possible package.</strong> all 3 bonuses included. full agent stack. founder access. you\'re about to deploy ${selectedModules.length} AI agents for less than the price of Netflix.</div>`;
+
+    document.getElementById('guideContent').innerHTML=`
+    <div class="guide-header">
+      <div class="guide-badge" style="${a.badge}">${a.name}</div>
+      <div class="guide-title">${a.name.split(' ')[1]} Build Guide</div>
+    </div>
+
+    <div class="paywall">
+      <div class="paywall-lock">\u{1F513}</div>
+      <div class="paywall-title rgb-split">your ${selectedModules.length}-agent system is ready to deploy</div>
+      <div class="paywall-sub">we built ${selectedModules.length} custom AI agents based on your answers. choose a plan and they go live.</div>
+
+      <div class="paywall-stats">
+        <div class="paywall-stat"><div class="paywall-stat-num">${selectedModules.length}</div><div class="paywall-stat-label">Agents Ready</div></div>
+        <div class="paywall-stat"><div class="paywall-stat-num">${steps.length}</div><div class="paywall-stat-label">Build Steps</div></div>
+        <div class="paywall-stat"><div class="paywall-stat-num">${(answers.platforms||[]).length}</div><div class="paywall-stat-label">Platforms</div></div>
+      </div>
+
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin:1.5rem 0">
+        <div style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem">your agent stack:</div>
+        ${selectedModules.map(m=>`<div style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0;font-size:0.8rem">${m.icon} <strong>${m.name}</strong> <span style="color:var(--text-dim)">— ${m.desc.split('.')[0]}</span></div>`).join('')}
+      </div>
+
+      <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin:1.5rem 0 1rem;text-align:center">choose your deployment plan:</div>
+
+      <!-- ═══ RUBICON-STYLE 3-COLUMN PRICING ═══ -->
+      <div class="pricing-grid" style="grid-template-columns:1fr 1.15fr 1fr;gap:0.6rem;align-items:start">
+
+        <!-- MONTHLY — anchor (exists to be rejected) -->
+        <div class="pw-plan pw-plan-monthly ${selectedPlan==='monthly'?'selected':''}" onclick="selectPlan('monthly')">
+          <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem">Monthly</div>
+          <div style="font-size:2rem;font-weight:800;font-family:'JetBrains Mono',monospace">$67</div>
+          <div style="font-size:0.6rem;color:var(--text-dim)">/month</div>
+          <div style="font-size:0.55rem;color:var(--text-dim);margin-top:0.3rem">Billed $67 every month</div>
+
+          <div style="margin-top:1rem;text-align:left">
+            <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem">Bonuses:</div>
+            <div class="pw-bonus pw-bonus-no">${bonusName}</div>
+            <div class="pw-bonus pw-bonus-no">Agent Strategy Lab Access</div>
+            <div class="pw-bonus pw-bonus-no">Founder Access Programme</div>
+          </div>
+          <div style="font-size:0.55rem;color:var(--red);margin-top:0.5rem;font-weight:700">0 of 3 bonuses</div>
+        </div>
+
+        <!-- YEARLY — the hero (default selected, glowing) -->
+        <div class="pw-plan pw-plan-yearly ${selectedPlan==='yearly'?'selected':''}" onclick="selectPlan('yearly')">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--cyan),var(--purple));color:#000;font-size:0.55rem;font-weight:800;padding:3px 14px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap">best value</div>
+          <div style="font-size:0.55rem;color:var(--cyan);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem">Yearly</div>
+          <div style="font-size:2.8rem;font-weight:800;color:var(--cyan);font-family:'JetBrains Mono',monospace">$19</div>
+          <div style="font-size:0.6rem;color:var(--text-dim)">/month</div>
+          <div class="pw-save-badge" style="background:rgba(0,230,118,0.1);color:var(--green)">save 72%</div>
+          <div style="font-size:0.55rem;color:var(--text-dim);margin-top:0.3rem">Charged $197 per year</div>
+
+          <div style="margin-top:1rem;text-align:left">
+            <div style="font-size:0.55rem;color:var(--cyan);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;font-weight:700">All bonuses included:</div>
+            <div class="pw-bonus pw-bonus-yes">${bonusName}</div>
+            <div class="pw-bonus pw-bonus-yes">Agent Strategy Lab Access</div>
+            <div class="pw-bonus pw-bonus-yes">Founder Access Programme <span style="color:var(--orange);font-size:0.5rem;font-weight:700">(worth $997)</span></div>
+          </div>
+          <div style="font-size:0.55rem;color:var(--green);margin-top:0.5rem;font-weight:700">\u2713 3 of 3 bonuses</div>
+        </div>
+
+        <!-- QUARTERLY — middle option -->
+        <div class="pw-plan pw-plan-quarterly ${selectedPlan==='quarterly'?'selected':''}" onclick="selectPlan('quarterly')">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:rgba(168,85,247,0.15);color:var(--purple);font-size:0.55rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap">popular</div>
+          <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem">Quarterly</div>
+          <div style="font-size:2rem;font-weight:800;font-family:'JetBrains Mono',monospace">$33</div>
+          <div style="font-size:0.6rem;color:var(--text-dim)">/month</div>
+          <div class="pw-save-badge" style="background:rgba(168,85,247,0.1);color:var(--purple)">save 51%</div>
+          <div style="font-size:0.55rem;color:var(--text-dim);margin-top:0.3rem">Charged $97 every 3 months</div>
+
+          <div style="margin-top:1rem;text-align:left">
+            <div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem">Bonuses:</div>
+            <div class="pw-bonus pw-bonus-yes">${bonusName}</div>
+            <div class="pw-bonus pw-bonus-yes">Agent Strategy Lab Access</div>
+            <div class="pw-bonus pw-bonus-no">Founder Access Programme</div>
+          </div>
+          <div style="font-size:0.55rem;color:var(--orange);margin-top:0.5rem;font-weight:700">2 of 3 bonuses</div>
+        </div>
+      </div>
+
+      <!-- Upsell nudges (Rubicon-style — shake animation on lower tiers) -->
+      ${nudgeMonthly}
+      ${nudgeQuarterly}
+      ${confirmYearly}
+
+      <!-- What every plan includes -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1rem;margin-top:1.2rem;text-align:left">
+        <div style="font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.6rem">every plan includes:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem 0.8rem;font-size:0.65rem">
+          <div>\u2713 Full personalized build guide</div>
+          <div>\u2713 ${selectedModules.length} custom AI agents</div>
+          <div>\u2713 Glitch codebase — clone & deploy</div>
+          <div>\u2713 Private Discord + #${type} channel</div>
+          <div>\u2713 Dashboard template</div>
+          <div>\u2713 Weekly live build sessions</div>
+          <div>\u2713 API setup + .env templates</div>
+          <div>\u2713 Guardrails + risk configs</div>
+        </div>
+      </div>
+
+      <!-- Deploy button -->
+      <button class="pw-deploy-btn" onclick="startStripeCheckout('${selectedPlan}')">
+        Deploy Your Agents \u2014 ${selectedPlan==='yearly'?'$197/year':selectedPlan==='quarterly'?'$97/quarter':'$67/month'}
+      </button>
+      <div style="text-align:center;margin-top:0.5rem;font-size:0.6rem;color:var(--text-dim)">\u{1F6E1} 30-day money-back guarantee &bull; cancel anytime &bull; instant access</div>
+
+    </div>
+  `;
+  }
+  renderPricing();
+}
+
+// ═══ INTEREST → AGENT MODULE MAP ═══
+const agentModules={
+  weather:{icon:'\u{26C8}',name:'Weather Sniper',
+    desc:'Scans 20+ cities for temperature mispricing on Kalshi. Buys cheap contracts when forecast data disagrees with the market.',
+    apis:'<strong>Kalshi</strong> — prediction market exchange<br><strong>NWS API</strong> — free government weather data (no key needed)',
+    soul:'You scan weather forecasts vs market prices. Buy when the gap is 4\u00B0F+. Never hold to settlement. Take profit at 85%+. Budget: $5 max per trade.',
+    guardrails:'max_per_trade: 5.00\ndaily_loss_cap: 15.00\nmax_trades_per_day: 5\nkill_switch_pct: 0.40',
+    launch:'Your agent scans 20 cities every 2 minutes. When it spots a misprice, it buys. When profit hits target, it sells. You get a Telegram alert for every move.'},
+  crypto:{icon:'\u{20BF}',name:'Crypto Scanner',
+    desc:'Monitors BTC, ETH, SOL for mean reversion and momentum setups. Paper trades first, goes live when it proves itself.',
+    apis:'<strong>Coinbase</strong> — crypto spot trading<br><strong>CoinGecko</strong> — price data (free tier)',
+    soul:'You trade crypto using mean reversion as your core edge. z-score 1.8 threshold, EMA divergence confirmation. Never chase. Wait for the setup.',
+    guardrails:'max_per_trade: 10.00\ndaily_loss_cap: 25.00\nmax_trades_per_day: 8\nmin_confidence: 0.70',
+    launch:'Paper mode first. 50+ trades with 50%+ win rate = go live. Your agent texts you every entry and exit.'},
+  realestate:{icon:'\u{1F3E0}',name:'Deal Finder',
+    desc:'Scrapes property records, permit filings, and off-market opportunities. Analyzes ROI and sends you investor-grade deal reports.',
+    apis:'<strong>NYC Open Data</strong> — permits, violations, sales<br><strong>Twilio</strong> — SMS alerts to your phone<br><strong>Resend</strong> — investor report emails',
+    soul:'You scan property data for undervalued deals. Calculate ARV, renovation cost, and projected ROI. Alert operator on any deal with 20%+ projected return.',
+    guardrails:'Never auto-bid. Agent finds and analyzes \u2014 you decide.\nMax 10 deal alerts per day.\nFlag any deal requiring 50%+ of available capital.',
+    launch:'Your agent monitors new filings daily. When a deal scores above threshold, you get a full breakdown on your phone.'},
+  social:{icon:'\u{1F4F1}',name:'Social Autopilot',
+    desc:'Manages your social media presence. Schedules posts, responds to DMs, tracks engagement, and grows your audience while you sleep.',
+    apis:'<strong>Meta Graph API</strong> — Instagram/Threads posting<br><strong>Buffer/Later</strong> — content scheduling<br><strong>OpenAI</strong> — caption generation',
+    soul:'You manage social media for the operator. Post consistently, engage with comments, track what performs. Goal: grow followers and drive traffic.',
+    guardrails:'Max 3 posts per day per platform.\nNever post without operator approval (until trusted).\nNo political or controversial content.',
+    launch:'Queue up your first week of content. Set the schedule. Your agent posts, tracks engagement, and reports what\u2019s working.'},
+  outreach:{icon:'\u{1F4E7}',name:'Outreach Engine',
+    desc:'Automates cold outreach, follow-ups, and lead nurturing. Sends personalized messages and tracks responses so nothing falls through the cracks.',
+    apis:'<strong>Resend</strong> — email sequences<br><strong>Twilio</strong> — SMS follow-ups<br><strong>Airtable</strong> — lead tracking CRM',
+    soul:'You run outreach campaigns. Personalize every message. Follow up on day 2, 5, and 10 if no reply. Track opens and responses. Report weekly stats.',
+    guardrails:'Max 50 outreach messages per day.\n24hr cooldown between follow-ups.\nStop sequence if recipient replies or unsubscribes.',
+    launch:'Load your prospect list. Write your templates. Your agent sends, follows up, and tracks everything. You just close.'},
+  data:{icon:'\u{1F4CA}',name:'Data Intelligence',
+    desc:'Scrapes, cleans, and analyzes data from any source. Finds patterns, generates reports, and surfaces insights you\u2019d never find manually.',
+    apis:'<strong>Web scraping</strong> — BeautifulSoup, Playwright<br><strong>OpenAI</strong> — analysis and summarization<br><strong>Google Sheets API</strong> — output reports',
+    soul:'You gather and analyze data. Scrape on schedule, clean the data, find anomalies, and generate reports. Alert on any significant pattern change.',
+    guardrails:'Respect robots.txt. Rate limit all scraping.\nCache data \u2014 never hit the same endpoint twice in an hour.\nFlag any data source that changes format.',
+    launch:'Pick your first data source. Set the scrape schedule. Your agent collects, analyzes, and sends you a daily briefing.'},
+  content:{icon:'\u{1F3A8}',name:'Content Engine',
+    desc:'Generates content ideas, drafts posts, creates hooks, and builds a content calendar tailored to your niche and audience.',
+    apis:'<strong>OpenAI</strong> — writing assistance<br><strong>Unsplash</strong> — royalty-free images<br><strong>Canva API</strong> — design templates',
+    soul:'You create content for the operator\u2019s brand. Study what performs, generate ideas, draft posts with hooks. Never publish without approval.',
+    guardrails:'Generate 5 ideas per day, draft 2.\nAlways include a hook in the first line.\nMatch the operator\u2019s voice and tone.',
+    launch:'Define your niche and voice. Your agent generates a week of content ideas and drafts the top 2. Review, approve, post.'},
+  ecom:{icon:'\u{1F6D2}',name:'E-Commerce Scout',
+    desc:'Finds trending products, analyzes margins, monitors competitors, and manages your store listings automatically.',
+    apis:'<strong>Shopify API</strong> — store management<br><strong>AliExpress</strong> — product sourcing<br><strong>Google Trends</strong> — demand signals',
+    soul:'You scout for winning products. Track trends, calculate margins after shipping and ads. Alert on any product with 40%+ margin and rising demand.',
+    guardrails:'Never auto-list without approval.\nMin 40% margin after all costs.\nMax 5 product tests per week.',
+    launch:'Connect your store. Your agent scans for trending products, calculates margins, and sends you the top picks daily.'},
+};
+
+// ═══ PLATFORM → CONNECTION MAP ═══
+const platformSetup={
+  instagram:{name:'Instagram',icon:'\u{1F4F7}',setup:'Meta Business Suite \u2192 Settings \u2192 API \u2192 Generate token'},
+  twitter:{name:'X (Twitter)',icon:'\u{1F426}',setup:'developer.x.com \u2192 Create app \u2192 Generate API keys'},
+  tiktok:{name:'TikTok',icon:'\u{1F3B5}',setup:'TikTok Developer Portal \u2192 Create app \u2192 Content Posting API'},
+  threads:{name:'Threads',icon:'\u{1F4DD}',setup:'Uses Meta Graph API \u2014 same token as Instagram'},
+  facebook:{name:'Facebook',icon:'\u{1F4D8}',setup:'Meta Business Suite \u2192 Settings \u2192 Pages API \u2192 Generate token'},
+  linkedin:{name:'LinkedIn',icon:'\u{1F4BC}',setup:'LinkedIn Developer \u2192 Create app \u2192 Share on LinkedIn scope'},
+  youtube:{name:'YouTube',icon:'\u{25B6}',setup:'Google Cloud Console \u2192 YouTube Data API v3 \u2192 OAuth2'},
+  discord:{name:'Discord',icon:'\u{1F4AC}',setup:'discord.com/developers \u2192 New Application \u2192 Bot token'},
+  email:{name:'Email/Newsletter',icon:'\u{2709}',setup:'Resend.com (free 100 emails/day) \u2192 API key'},
+};
+
+// ═══ BUDGET → HARDWARE REC ═══
+function getHardwareRec(){
+  const b=answers.invest;
+  if(b==='minimal')return {title:'Use What You Have',desc:'Your current laptop or phone works to start. When ready, a $5/mo cloud VPS (DigitalOcean) runs your agent 24/7.',cmd:'# No hardware needed yet \u2014 start on your own machine'};
+  if(b==='moderate')return {title:'Cloud VPS ($5-20/mo)',desc:'A DigitalOcean or Hetzner VPS runs your agents 24/7 without tying up your personal machine. $5/mo for 1 agent, $20/mo for a full stack.',cmd:'# Create a droplet at digitalocean.com\n# Then SSH in and set up your agent'};
+  if(b==='serious')return {title:'Mac Mini M4 ($499)',desc:'Silent, low power, runs 24/7 on your desk. The gold standard for Glitch operators. One machine runs all your agents.',cmd:'sudo pmset -c sleep 0 disksleep 0 displaysleep 10'};
+  return {title:'Mac Mini M4 + Cloud Backup',desc:'Dedicated Mac Mini for primary operations + a cloud VPS as failover. Your agents never go down.',cmd:'sudo pmset -c sleep 0 disksleep 0 displaysleep 10'};
+}
+
+// ═══ TECH LEVEL → INSTRUCTION STYLE ═══
+function getTechStyle(){
+  const t=answers.tech||3;
+  if(t<=2)return {level:'beginner',installDesc:'We\u2019ll walk you through every click. No coding experience needed.',installSteps:'<div class="card"><div class="card-title">\u{1F4F2} Step by Step</div><div class="card-body"><p>1. Open <strong>Terminal</strong> on your Mac (search "Terminal" in Spotlight) or <strong>Command Prompt</strong> on Windows</p><p>2. Copy-paste each command below exactly as shown</p><p>3. Press Enter after each one</p><p>4. Wait for it to finish before the next</p></div></div>'};
+  if(t<=3)return {level:'intermediate',installDesc:'You know your way around a computer. Here\u2019s the quick setup.',installSteps:''};
+  return {level:'advanced',installDesc:'You know the drill. Here\u2019s the fast track.',installSteps:''};
+}
+
+function getGuideSteps(type){
+  const a=archetypes[type];
+  const hw=getHardwareRec();
+  const ts=getTechStyle();
+  const interests=answers.interest||[];
+  const platforms=answers.platforms||[];
+  const goal=answers.goal||'growth';
+  const time=answers.time||10;
+  const budget=answers.invest||'moderate';
+
+  // Build dynamic agent stack from their interests
+  const selectedModules=interests.map(i=>agentModules[i]).filter(Boolean);
+  const selectedPlatforms=platforms.map(p=>platformSetup[p]).filter(Boolean);
+
+  // ROI framing based on income goal
+  const goalText={starter:'$500-$1K/mo',growth:'$1K-$5K/mo',scale:'$5K-$20K/mo',empire:'$20K+/mo'}[goal]||'$1K-$5K/mo';
+
+  const steps=[];
+
+  // ── STEP 1: YOUR BLUEPRINT (personalized summary) ──
+  steps.push({icon:'\u{1F4CB}',title:'Your Custom Blueprint',desc:`Built from your answers. Here\u2019s what we\u2019re building for you.`,
+    content:`
+    <div class="card"><div class="card-title">\u{1F3AF} Your Glitch Profile</div><div class="card-body">
+      <p><strong>Archetype:</strong> ${a.name} \u2014 ${a.tagline}</p>
+      <p><strong>Goal:</strong> ${goalText} from AI-powered systems</p>
+      <p><strong>Time:</strong> ${time} hrs/week to build</p>
+      <p><strong>Budget:</strong> ${budget==='minimal'?'Bootstrap':'$'+{moderate:'100-500',serious:'500-2K',premium:'2K+'}[budget]||'100-500'}</p>
+    </div></div>
+    <div class="card"><div class="card-title">\u{26A1} Your Agent Stack (${selectedModules.length} agent${selectedModules.length!==1?'s':''})</div><div class="card-body">
+      ${selectedModules.map(m=>`<p>${m.icon} <strong>${m.name}</strong> \u2014 ${m.desc.split('.')[0]}.</p>`).join('')}
+    </div></div>
+    ${selectedPlatforms.length?`<div class="card"><div class="card-title">\u{1F310} Your Platforms</div><div class="card-body">
+      ${selectedPlatforms.map(p=>`<p>${p.icon} ${p.name}</p>`).join('')}
+    </div></div>`:''}`});
+
+  // ── STEP 2: HARDWARE (budget-aware) ──
+  steps.push({icon:'\u{1F5A5}',title:hw.title,desc:hw.desc,
+    content:`${ts.installSteps}<div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="k">${hw.cmd}</span></div></div>
+    ${budget==='minimal'?'<div class="alert alert-warn">Start free. Upgrade to dedicated hardware when your first agent is profitable.</div>':''}`});
+
+  // ── STEP 3: INSTALL BRAIN (tech-level-aware) ──
+  steps.push({icon:'\u{1F9E0}',title:'Install the Brain',desc:ts.installDesc,
+    content:`${ts.installSteps}<div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body">${ts.level==='beginner'?'<span class="c"># Step 1: Install Node.js (the engine)</span>\n<span class="c"># Go to nodejs.org and download the installer</span>\n\n<span class="c"># Step 2: Install Claude Code (the brain)</span>\n':'<span class="c"># Install Claude Code</span>\n'}<span class="k">npm install -g @anthropic-ai/claude-code</span>\n\n<span class="c"># Login to your account</span>\n<span class="k">claude auth login</span></div></div>
+    <div class="alert alert-warn">${budget==='minimal'||budget==='moderate'?'Claude Max ($100/mo) gives unlimited usage. Start with the free tier to test, upgrade when you\u2019re ready.':'Claude Max ($100/mo) = unlimited. Best value for 24/7 agents.'}</div>`});
+
+  // ── STEP 4: BUILD YOUR AGENTS (one card per interest they picked) ──
+  selectedModules.forEach((m,i)=>{
+    steps.push({icon:m.icon,title:`Agent ${i+1}: ${m.name}`,desc:m.desc,
+      content:`
+      <div class="card"><div class="card-title">\u{1F50C} APIs You\u2019ll Connect</div><div class="card-body"><p>${m.apis}</p></div></div>
+      <div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">spirit/SOUL.md</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="c"># Agent: ${m.name}</span>\n<span class="c"># Part of your ${a.name} stack</span>\n\n<span class="c">## Mission</span>\n${m.soul}\n\n<span class="c">## Guardrails</span>\n${m.guardrails}</div></div>
+      <div class="alert alert-success">${m.launch}</div>`});
+  });
+
+  // ── STEP: CONNECT PLATFORMS (if they picked any) ──
+  if(selectedPlatforms.length){
+    steps.push({icon:'\u{1F310}',title:'Connect Your Platforms',desc:`You said you\u2019re on ${selectedPlatforms.map(p=>p.name).join(', ')}. Let\u2019s plug them in.`,
+      content:`<div class="card"><div class="card-title">\u{1F511} Platform API Setup</div><div class="card-body">
+        ${selectedPlatforms.map(p=>`<p>${p.icon} <strong>${p.name}</strong><br><span style="font-size:0.8rem;color:var(--text-dim)">${p.setup}</span></p>`).join('<hr style="border-color:var(--border);margin:0.5rem 0">')}
+      </div></div>
+      <div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">.env</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="c"># Add your API keys here</span>\n${selectedPlatforms.map(p=>`<span class="k">${p.name.toUpperCase().replace(/[^A-Z]/g,'_')}_API_KEY=your-key-here</span>`).join('\n')}\n\n<span class="c"># Telegram alerts</span>\n<span class="k">TELEGRAM_BOT_TOKEN=your-bot-token</span></div></div>
+      <div class="alert alert-danger">NEVER commit .env to git. NEVER share API keys. Trade-only permissions always.</div>`});
+  }
+
+  // ── STEP: TELEGRAM (universal) ──
+  steps.push({icon:'\u{1F4F1}',title:'Connect Telegram',desc:'Every action your agent takes hits your phone instantly.',
+    content:`<div class="card"><div class="card-title">\u{1F916} 60-Second Setup</div><div class="card-body"><p>1. Open Telegram, search <strong>@BotFather</strong></p><p>2. Send <strong>/newbot</strong></p><p>3. Name it (e.g. "My Glitch Agent")</p><p>4. Copy the token into your .env file</p></div></div>
+    <div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="k">echo 'TELEGRAM_BOT_TOKEN=your-token' >> ~/glitch-agent/.env</span></div></div>`});
+
+  // ── STEP: GUARDRAILS (budget-aware) ──
+  const maxTrade=budget==='minimal'?2:budget==='moderate'?5:10;
+  const dailyCap=budget==='minimal'?5:budget==='moderate'?15:30;
+  steps.push({icon:'\u{1F6E1}',title:'Set Your Guardrails',desc:'These protect you. Non-negotiable. Set them before anything runs.',
+    content:`<div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">config/risk_limits.yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="c"># \u2550\u2550\u2550 YOUR GUARDRAILS \u2550\u2550\u2550</span>\n<span class="c"># Based on your budget: ${budget}</span>\n\n<span class="s">risk:</span>\n  <span class="s">max_per_trade:</span> ${maxTrade}.00\n  <span class="s">daily_loss_cap:</span> ${dailyCap}.00\n  <span class="s">max_trades_per_day:</span> 5\n  <span class="s">kill_switch_pct:</span> 0.40\n\n<span class="s">behavior:</span>\n  <span class="s">paper_mode:</span> true  <span class="c"># START HERE</span>\n  <span class="s">alert_on_every_trade:</span> true</div></div>
+    <div class="alert alert-danger"><strong>Rule #1:</strong> Paper mode first. Always. Go live only after 50+ trades with 50%+ win rate.</div>`});
+
+  // ── STEP: LAUNCH (time-aware) ──
+  const schedule=time<=5?'Check in once a day. Your agent handles the rest.':time<=15?'30 min/day to review and optimize. Agent runs 24/7.':'Deep build sessions. You\u2019ll have a full stack running within 2 weeks.';
+  steps.push({icon:'\u{1F680}',title:'Launch',desc:`Your ${a.name} goes live. ${schedule}`,
+    content:`<div class="code-block"><div class="code-head"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div><div class="code-body"><span class="k">chmod +x ~/glitch-agent/scripts/start.sh</span>\n<span class="k">~/glitch-agent/scripts/start.sh</span>\n\n<span class="c"># \u26A1 Your ${a.name} is scanning.</span>\n<span class="c"># Check Telegram for alerts.</span></div></div>
+    <div class="alert alert-success"><strong>Your ${a.name} is alive.</strong> ${selectedModules.length} agent${selectedModules.length!==1?'s':''} running. Paper mode. Target: ${goalText}. Join the community and post your first win.</div>`});
+
+  return steps;
+}
+
+function renderFinalOffer(type){
+  const a=archetypes[type];
+  const interests=answers.interest||[];
+  const selectedModules=interests.map(i=>agentModules[i]).filter(Boolean);
+  const channelName=type==='storm'?'#storm-traders':type==='phantom'?'#phantom-ops':type==='oracle'?'#oracle-deals':type==='architect'?'#architect-builds':'#specter-empire';
+
+  document.getElementById('guideContent').innerHTML=`
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="font-size:4rem;margin-bottom:0.5rem;filter:drop-shadow(0 0 30px ${a.color});animation:iconPulse 2s ease-in-out infinite">${a.icon}</div>
+      <h2 style="font-size:2rem;font-weight:800;margin-bottom:0.3rem">Your ${a.name} is Built.</h2>
+      <p style="color:var(--text-dim);font-size:0.9rem">${selectedModules.length} agent${selectedModules.length!==1?'s':''} configured. Guardrails set. Ready to launch.</p>
+    </div>
+
+    <div class="alert alert-success" style="text-align:center;margin-bottom:1.5rem">
+      <strong>\u{1F4AC} Your Glitch Network community access is active.</strong><br>
+      <span style="font-size:0.8rem;color:var(--text-dim)">Join <strong>${channelName}</strong> in our Discord to connect with other ${a.name.split(' ')[1]}s.</span>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">\u{2705} What you've built today</div>
+      <div class="card-body">
+        ${selectedModules.map(m=>`<p>${m.icon} <strong>${m.name}</strong> — configured with your SOUL.md, APIs, and guardrails</p>`).join('')}
+        <p>\u{1F4F1} Telegram alerts — every action hits your phone</p>
+        <p>\u{1F6E1} Guardrails — kill switch, daily caps, paper mode</p>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin:2.5rem 0 1.5rem">
+      <div style="font-size:1.3rem;font-weight:700;margin-bottom:0.3rem">Want to go further?</div>
+      <div style="font-size:0.85rem;color:var(--text-dim)">Your guide got you started. These get you results.</div>
+    </div>
+
+    <div class="pricing-grid" style="grid-template-columns:1fr 1fr">
+      <div class="price-card feat">
+        <div class="price-name">Builder</div>
+        <div class="price-amt">$47</div>
+        <div class="price-per">/month</div>
+        <ul class="price-feats">
+          <li>Full Glitch codebase — clone & deploy</li>
+          <li>Private Discord + ${channelName}</li>
+          <li>Monthly new strategy drops</li>
+          <li>Custom dashboard template</li>
+          <li>Live build sessions (weekly)</li>
+          <li>Priority support from operators</li>
+        </ul>
+        <button class="cta" style="width:100%;font-size:0.8rem;padding:0.7rem">Join Builder \u{26A1}</button>
+      </div>
+      <div class="price-card">
+        <div class="price-name">Inner Circle</div>
+        <div class="price-amt">$197</div>
+        <div class="price-per">/month</div>
+        <div style="font-size:0.6rem;color:var(--orange);margin-bottom:0.8rem">Limited to 10 members</div>
+        <ul class="price-feats">
+          <li>Everything in Builder</li>
+          <li>1-on-1 calls with the founder</li>
+          <li>Custom dashboard built for YOUR business</li>
+          <li>Custom agent builds on request</li>
+          <li>Weekly live strategy calls</li>
+          <li>Direct access — text anytime</li>
+        </ul>
+        <button class="cta" style="width:100%;font-size:0.8rem;padding:0.7rem">Apply \u{1F451}</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:3rem;padding:2rem 0;border-top:1px solid var(--border)">
+      <div style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">We are Glitch. The cheat code.</div>
+      <div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1.5rem">Your agent is running. Your community is waiting. Now compound.</div>
+      <a href="#" style="color:var(--cyan);font-size:0.8rem;text-decoration:none;border-bottom:1px solid rgba(0,212,255,0.3)">Join the Discord \u2192</a>
+    </div>
+  `;
+  scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══ INITIATION SEQUENCE ═══
+function runInitiation(tier, type, onComplete){
+  const a=archetypes[type];
+  const interests=answers.interest||[];
+  const selectedModules=interests.map(i=>agentModules[i]).filter(Boolean);
+  const name=userData.name||'Operator';
+  const channelName=type==='storm'?'#storm-traders':type==='phantom'?'#phantom-ops':type==='oracle'?'#oracle-deals':type==='architect'?'#architect-builds':'#specter-empire';
+
+  // Create overlay
+  const overlay=document.createElement('div');
+  overlay.className='init-overlay';
+  overlay.id='initOverlay';
+
+  // Matrix rain background
+  for(let i=0;i<20;i++){
+    const col=document.createElement('div');
+    col.className='matrix-col';
+    col.style.left=Math.random()*100+'%';
+    col.style.animationDuration=(3+Math.random()*4)+'s';
+    col.style.animationDelay=Math.random()*3+'s';
+    col.textContent=Array.from({length:30},()=>String.fromCharCode(0x30A0+Math.random()*96)).join('');
+    overlay.appendChild(col);
+  }
+
+  // Welcome text
+  const welcome=document.createElement('div');
+  welcome.className='init-welcome';
+  welcome.textContent=`WELCOME, ${name.toUpperCase()}.`;
+  overlay.appendChild(welcome);
+
+  const sub=document.createElement('div');
+  sub.className='init-sub';
+  sub.textContent=tier==='inner_circle'?'INNER CIRCLE ACCESS GRANTED':tier==='builder'?'BUILDER CLEARANCE APPROVED':`INITIALIZING YOUR ${a.name.split(' ')[1].toUpperCase()} SYSTEM...`;
+  overlay.appendChild(sub);
+
+  // Inner Circle seat badge
+  if(tier==='inner_circle'){
+    const seat=document.createElement('div');
+    seat.className='init-seat';
+    seat.textContent=Math.floor(Math.random()*3)+7+'/10'; // 7-9 of 10
+    seat.style.opacity='0';
+    overlay.appendChild(seat);
+    setTimeout(()=>{seat.style.opacity='1';seat.style.animation='initFadeIn 0.6s ease forwards'},1500);
+  }
+
+  // Agent deployment section
+  const agentSection=document.createElement('div');
+  agentSection.className='init-agents';
+  overlay.appendChild(agentSection);
+
+  // Grant section
+  const grantSection=document.createElement('div');
+  grantSection.className='init-grants';
+  overlay.appendChild(grantSection);
+
+  // Enter button (hidden initially)
+  const enterBtn=document.createElement('div');
+  enterBtn.className='init-enter';
+  enterBtn.innerHTML=`<button class="cta" style="width:100%;font-size:1rem;padding:1rem" onclick="document.getElementById('initOverlay').remove();(${onComplete.toString()})()">Enter Your ${a.name.split(' ')[1]} System \u2192</button>`;
+  overlay.appendChild(enterBtn);
+
+  document.body.appendChild(overlay);
+
+  // Animate agents deploying one by one
+  let delay=2000;
+  const colors=['var(--cyan)','var(--green)','var(--purple)','var(--orange)','var(--pink)'];
+  selectedModules.forEach((m,i)=>{
+    setTimeout(()=>{
+      const row=document.createElement('div');
+      row.className='init-agent-row';
+      row.innerHTML=`
+        <div class="init-agent-icon">${m.icon}</div>
+        <div class="init-agent-info">
+          <div class="init-agent-name">${m.name}</div>
+          <div class="init-agent-bar"><div class="init-agent-fill" style="background:${colors[i%5]}" id="initFill${i}"></div></div>
+          <div class="init-agent-status" id="initStatus${i}">initializing...</div>
+        </div>
+      `;
+      agentSection.appendChild(row);
+      // Trigger animations
+      requestAnimationFrame(()=>{
+        row.classList.add('show');
+        setTimeout(()=>{
+          document.getElementById('initFill'+i).classList.add('go');
+        },200);
+        setTimeout(()=>{
+          document.getElementById('initStatus'+i).textContent='DEPLOYED';
+          document.getElementById('initStatus'+i).classList.add('done');
+        },1500);
+      });
+    },delay);
+    delay+=1800;
+  });
+
+  // Grants after agents deploy
+  const grants=['COMMUNITY ACCESS: GRANTED',`DISCORD ROLE: ${a.name.split(' ')[1].toUpperCase()}`,'TELEGRAM ALERTS: CONFIGURED','GUARDRAILS: ARMED'];
+  if(tier==='builder'){
+    grants.push('CODEBASE ACCESS: UNLOCKED','LIVE SIGNAL FEED: CONNECTED','BUILD SESSIONS: ENROLLED');
+  }
+  if(tier==='inner_circle'){
+    grants.push('CODEBASE ACCESS: UNLOCKED','LIVE SIGNAL FEED: CONNECTED','PRIVATE CHANNEL: UNLOCKED','FOUNDER ACCESS: DIRECT','CUSTOM BUILD QUEUE: ACTIVE');
+  }
+  const grantStart=delay;
+  grants.forEach((g,i)=>{
+    setTimeout(()=>{
+      const gEl=document.createElement('div');
+      gEl.className='init-grant';
+      gEl.textContent=g;
+      grantSection.appendChild(gEl);
+      requestAnimationFrame(()=>gEl.classList.add('show'));
+    },grantStart+i*400);
+  });
+
+  // Show enter button
+  setTimeout(()=>{
+    enterBtn.classList.add('show');
+  },grantStart+grants.length*400+500);
+}
+
+// ═══ UTILS ═══
+function copyCode(btn){
+  const code=btn.closest('.code-block').querySelector('.code-body').textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    btn.textContent='Copied!';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2000);
+  });
+}
+</script>
+</body>
+</html>
