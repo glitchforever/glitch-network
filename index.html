@@ -1363,6 +1363,34 @@ function doReveal(){
     const rarity=rarityPcts[type]||'15%';
     const edgeLevel=answers.tech>=4?'ELITE':answers.tech>=3?'HIGH':'STRONG';
 
+    // Build personalized "what your system does" from their answers
+    const interests=answers.interest||[];
+    const automate=answers.automate||'passive_income';
+    const dreams=answers.dream||[];
+    const platforms=answers.platforms||[];
+
+    const autoDesc={
+      passive_income:'makes you money while you sleep — scanning markets, finding edges, placing trades automatically',
+      social_auto:'runs your entire social media — posts, replies, grows your audience — while you focus on what matters',
+      lead_gen:'finds you clients and customers on autopilot — outreach, follow-ups, and closing',
+      deal_finder:'finds underpriced deals before anyone else — scans data, analyzes ROI, sends you alerts',
+      ecom_auto:'runs your store — inventory, listings, pricing, customer service — all handled',
+      decision_engine:'does your research, analyzes data, and gives you clear answers so you make better decisions faster',
+    };
+
+    const dreamDesc={
+      auto_trade:'an AI that trades for you 24/7 and grows your money',
+      brand_growth:'an AI that builds your brand to 100K+ followers',
+      deal_scout:'an AI that finds deals before anyone else sees them',
+      job_replace:'multiple AI income streams that replace your job',
+      auto_biz:'a fully automated business that runs without you',
+      agent_army:'a team of AI agents all working for you from one dashboard',
+    };
+
+    const yourSystem=autoDesc[automate]||autoDesc.passive_income;
+    const yourDreams=dreams.map(d=>dreamDesc[d]).filter(Boolean);
+    const selectedModules=interests.map(i=>agentModules[i]).filter(Boolean);
+
     card.innerHTML=`
       <div class="reveal-archetype-icon">${a.icon}</div>
       <div class="reveal-youare">Your Glitch is</div>
@@ -1375,17 +1403,36 @@ function doReveal(){
         <div style="text-align:center"><div style="font-size:1.5rem;font-weight:800;color:${a.color}">${edgeLevel}</div><div style="font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Edge potential</div></div>
       </div>
 
-      <div class="reveal-desc">${a.desc}</div>
-      <div class="reveal-builds">
-        <div class="reveal-builds-title">What you'll build:</div>
-        ${a.builds.map(b=>`<div class="reveal-build-item">${b}</div>`).join('')}
+      <!-- PERSONALIZED: What YOUR system does -->
+      <div style="background:var(--bg2);border:1px solid ${a.color};border-radius:12px;padding:1.2rem;margin:1rem 0;text-align:left">
+        <div style="font-size:0.6rem;color:${a.color};text-transform:uppercase;letter-spacing:2px;margin-bottom:0.6rem;font-weight:700">here's what your AI system does for you:</div>
+        <div style="font-size:0.9rem;line-height:1.7;margin-bottom:1rem">It <strong style="color:${a.color}">${yourSystem}</strong>.</div>
+
+        ${selectedModules.length>0?`
+        <div style="font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.5rem">your ${selectedModules.length} AI agents:</div>
+        ${selectedModules.map(m=>`<div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0;font-size:0.8rem">${m.icon} <strong>${m.name}</strong> <span style="color:var(--text-dim);font-size:0.7rem">— ${m.desc.split('.')[0]}</span></div>`).join('')}
+        `:''}
+
+        ${yourDreams.length>0?`
+        <div style="font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin:0.8rem 0 0.5rem">what you said you want:</div>
+        ${yourDreams.map(d=>`<div style="padding:0.25rem 0;font-size:0.8rem;color:var(--green)">\u2713 ${d}</div>`).join('')}
+        <div style="font-size:0.75rem;margin-top:0.5rem;color:var(--text-dim)">we build exactly this. not a generic course — a system configured to YOUR answers.</div>
+        `:''}
       </div>
-      <div class="reveal-community">
-        <div class="reveal-community-title">\u{1F4AC} You're in the Glitch Network</div>
-        <div class="reveal-community-desc">Your community access is active. Join ${type==='storm'?'#storm-traders':type==='phantom'?'#phantom-ops':type==='oracle'?'#oracle-deals':type==='architect'?'#architect-builds':'#specter-empire'} in our Discord to connect with other ${a.name.split(' ')[1]}s.</div>
+
+      ${platforms.length>0?`
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0.8rem;margin:0.5rem 0;font-size:0.75rem;text-align:left">
+        <span style="color:var(--text-dim)">connected to:</span> ${platforms.map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(', ')}
       </div>
-      <button class="cta" style="width:100%" onclick="startGuide('${type}')">Start My ${a.name.split(' ')[1]} Build Guide &rarr;</button>
-      <div style="margin-top:1rem;font-size:0.65rem;color:var(--text-dim)">Screenshot this and share your archetype \u{1F4F8}</div>
+      `:''}
+
+      <div style="background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(168,85,247,0.06));border:1px solid var(--border);border-radius:10px;padding:1rem;margin:1rem 0;text-align:center">
+        <div style="font-size:1.1rem;font-weight:800;margin-bottom:0.4rem">if you can imagine it, you can create it.</div>
+        <div style="font-size:0.75rem;color:var(--text-dim);line-height:1.6">this isn't a preset template. YOUR answers shape YOUR system. want a trading bot? an outreach engine? a deal finder? a full business that runs itself? we build it. you dream it — AI executes it.</div>
+      </div>
+
+      <button class="cta" style="width:100%;margin-top:1rem" onclick="startGuide('${type}')">See My Full Build Plan &rarr;</button>
+      <div style="margin-top:0.8rem;font-size:0.65rem;color:var(--text-dim)">Screenshot this and share your archetype \u{1F4F8}</div>
     `;
   },2500);
 }
@@ -1622,22 +1669,22 @@ function startGuideReal(type){
         ${dreamFeats.map(d=>`<p>\u{2705} <strong>${d}</strong></p>`).join('')}
         ${dreamFeats.length===0?'<p>\u{2705} <strong>Custom AI system built for your specific goals</strong></p>':''}
       </div></div>
-      <div class="card"><div class="card-title">\u{1F4DE} your 1-on-1 schedule</div><div class="card-body">
-        <p><strong>Week 1:</strong> Kickoff call — review your quiz profile, plan your custom build</p>
-        <p><strong>Week 2:</strong> Build session — we code your custom agents together live</p>
-        <p><strong>Week 3:</strong> Optimization — review paper trading results, tune parameters</p>
-        <p><strong>Week 4:</strong> Go live — deploy to production, set alerts, launch</p>
-        <p style="margin-top:0.5rem;color:var(--text-dim);font-size:0.8rem">Then: weekly strategy calls + unlimited text access to the founder</p>
+      <div class="card"><div class="card-title">\u{1F4CB} your build timeline</div><div class="card-body">
+        <p><strong>Week 1:</strong> You DM us your goals — we send back a custom build plan + Loom walkthrough</p>
+        <p><strong>Week 2:</strong> We build your custom agents and push them to your repo</p>
+        <p><strong>Week 3:</strong> Paper trading live — we review results and tune parameters for you</p>
+        <p><strong>Week 4:</strong> Go live — production deploy, alerts configured, you\'re running</p>
+        <p style="margin-top:0.5rem;color:var(--text-dim);font-size:0.8rem">Then: ongoing strategy updates + unlimited DM access to the founder</p>
       </div></div>
-      <div class="alert alert-success"><strong>You don\'t build this alone.</strong> We build it WITH you, on calls, sharing screens. Your system, our expertise. That\'s the Inner Circle.</div>`});
+      <div class="alert alert-success"><strong>You don\'t build this alone.</strong> We build it FOR you. DM us, get Loom walkthroughs, custom code pushed to your repo. That\'s the Inner Circle.</div>`});
 
     steps.push({icon:'\u{1F4F1}',title:'Direct Founder Access',desc:'Text anytime. No tickets. No support queue. Just answers.',
       content:`
       <div class="card"><div class="card-title">\u{1F4AC} how it works</div><div class="card-body">
-        <p><strong>Telegram:</strong> Direct chat with the founder — text anytime, get answers fast</p>
-        <p><strong>Screen shares:</strong> Jump on a call whenever you\'re stuck</p>
-        <p><strong>Custom code:</strong> Need a feature? Ask and it gets built into your stack</p>
-        <p><strong>Strategy:</strong> Real-time market reads, position reviews, portfolio advice</p>
+        <p><strong>Telegram DM:</strong> Direct chat with the founder — text or voice note anytime, answers within 24hrs</p>
+        <p><strong>Loom walkthroughs:</strong> Stuck on something? You get a personalized screen recording walking you through it</p>
+        <p><strong>Custom builds:</strong> Describe what you want, we build it into your stack — no extra charge</p>
+        <p><strong>Strategy reads:</strong> Market analysis, position reviews, portfolio advice — on demand</p>
       </div></div>
       <div class="alert alert-warn">Inner Circle is limited to 10 members for a reason. This level of access doesn\'t scale. When it\'s full, it\'s full.</div>`});
   }
